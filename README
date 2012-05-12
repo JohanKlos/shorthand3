@@ -1,0 +1,14 @@
+Shorthand3 is, for me, a way to quickly find files and programs and open/edit/run them.
+Shorthand can be used to do more than that though, through plugins.
+
+Goal is to make Shorthand as easy and accessible to use for as many people as possible.
+
+For the searching the script functions as a frontend for "everything.exe" and it's commandline brother "es.exe" (http://www.voidtools.com).
+Everything.exe does not support searching inside files, so for that Shorthand uses FindStr.exe (http://technet.microsoft.com/en-us/library/bb490907.aspx) 
+For most other things I've built my own script.
+
+I've been building and re-building Shorthand for a few years now, slowly building my skills in autohotkey scripting.
+However, several other launchers have influenced and inspired it, they are (in no particular order):
+- Launchy (http://www.launchy.net/)
+- Find-and-Run-Robot (https://www.donationcoder.com/Software/Mouser/findrun/)
+- 7plus (http://code.google.com/p/7plus/)
