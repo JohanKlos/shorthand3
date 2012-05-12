@@ -1,0 +1,132 @@
+SHORTHAND3
+
+-----------------------------
+TO DO
+-----------------------------
+	short term
+	-------------------------
+	- find a way to hide the trayicon for the plugin tester, maybe get the text of the script and append the #notrayicon line?
+	- add "only search" mode:
+		start menus, programs pinned to taskbar, desktop
+		%AppData%\Microsoft\Internet Explorer\Quick Launch\User Pinned\TaskBar
+		(add icons then?)
+	- plugin: hide/move by sliding
+	- plugin: timer
+	- menu plugin
+	- history is not working after you refine a search (search and then add letters to the search term)
+	- add "stick to top" and "stick to bottom"
+	- add "transparency" with slider, maybe with mouseover to 0 and off to like 120?
+	- add reference to "www.voidtools.com" to about
+	- "defrag" won't find anything, but "*defrag" will.... maybe use *%command_search% ?
+	- history hits do not always show up after switching extensions on when a result is showing
+	- add resizing
+	- positions and stuff based on username?
+	- optimize GUI > take a look at NODE!
+	- check for errors in plugins, if so, disable the plugin with the problem
+	- sub -> function
+	- function -> inc
+	- edit sh_winpad so the hotkeys can be configured in the custom files
+	- add encryption: http://www.autohotkey.com/community/viewtopic.php?t=25346
+	- add "run with" < problem with RunAsUser
+	- transparent when not active
+	- do a search trim instead of a new search when the user types instead of backspaces
+	- allow for interactive debugging though DBGP
+	- fix history: why did it save "pidginportable." ?
+	- how does AHK handle double subs in includes? require A_ScriptName in the subs?
+	- check for missing files, offer to download and unzip, else exitapp
+	- how to execute starting files in an included file
+	- plugins dependable on portable (in scriptdir or in user data)
+	- if hitlist is active, let DEL delete the row via GUI_ADD_delete 
+	- get rid of double hits in hitlist due to history (sort?)
+	- auto-update
+	- check for apps\Everything.db < especially firstrun
+	- uninstall
+	- check for hotkeys that are only one key or one modifier and alert the user
+	- check for double hotkeys
+	- run as admin
+	- always run as admin
+	- always run custom files as admin
+	- runadmin in custom files
+	- hotkeys for filters / advanced/simple / commandsearch, etc
+	- tips (like: use extension filter or hide folders to speed up the program)
+	- split the extension filters into: - documents (doc*, xls*, txt, rtf, odf, pdf) - configuration (cfg, ini) - images (jpg, tiff, png, bmp, gif) - media (mp3, mp4, flac, ogg) - custom (lnk)
+	- history GUI2 (a la log)
+	- context menu for the listview
+	- refine the preferences GUI
+	- focus on command_search when GUI is shown
+	- add secure password generation module
+	- refine tray menu
+	- refine preferences menu
+	- context for the shorthand icon in the main GUI
+	- add scoring (a la FindAndRunRobot : http://www.donationcoder.com/Software/Mouser/findrun/index.html)
+	- add history
+	- add dragging of files out of the hitlist to copy
+	- add about
+	- allow resizing of the main GUI
+	- update status line (information about the selected file if the hitlist has focus)
+	- allow to select more than one hit (to delete or copy or whatever), NOTE: requires statusbar update
+	- optimise search so it refines old search results instead of searching anew for every character typed
+	- add "start with windows" option (autostart)
+	- fix the statusbar (function_lv_cmd): if the user uses down (sub_down) to get to the listview, the statusbar doesn't show the file info for the first line
+	- fix scrolling in the hitlist using up/down
+	- adjust the logging, too much is logged right now, what is needed for troubleshooting?
+		~ existence of necessary files
+		~ operations (command_search, searching for updates, what else?)
+
+	
+	long term
+	-------------------------
+	- filter system/hidden files < FileGetAttrib, Attributes, C:\My File.txt does not seem to see hiberfil.sys as S or even H... problem there
+	- allow custom_files to be edited inside the GUI_preferences
+	- optimize parse_custom by using an array instead of a parsing loop?
+	- optimize findstr usage (http://technet.microsoft.com/en-us/library/bb490907.aspx)
+	- make an installer
+	- edit all text into variables / make language files possible
+	- add RegEx support
+	- add different options in the search editbox (like search on Google or do calculations)
+	- adding programs to open files with certain extensions with (regardless of the system settings)
+	- Use FileOpen() instead of FileRead?
+	- add log file to preferences (parse the log and show it in a separate treeview, a la Spent)
+	- add a check for the size of the log file
+
+
+-----------------------------
+What's new
+-----------------------------
+@v3.00.001 - _____, 2012
+	- add automatically start with windows (basically a shortcut in the startup routine)
+	- keep a log file with log entries (in addition to the outputdebugs, I guess)
+	- added a help section to the preferences GUI, on mouseover show helptext in that control
+[Feature] add the run lines of the custom_files to the search routine, taking care to circumvent the filter
+[Feature] timer that checks for mutations in the custom_files, so if a hotkey or program is changed, it is loaded
+[MinorFeature] empty GUI after command 
+[MinorFeature] autohide GUI on loss of focus
+[MinorFeature] autohide GUI after command
+[MinorFeature] default hotkeys to the script for showing the GUI and preferences via the custom_files (later changeable through gui_preferences)
+[MinorFeature] GUI fade in/out
+[Feature] files for hotkeys and custom shorthands (short names for programs/actions) (allow for commenting lines, starting with ; )
+[Feature] hotkeys functionality
+[Feature] save position and dimensions of the GUI on exit of the script
+[MinorFeature] status line (search time)
+[Feature] simple/advanced search method
+[Feature] filtering of search results (filter folders, extensions)
+[MinorFeature] up/down to the GUI so with up and down keys the user can switch between editboxes and the results
+[MinorFeature] changed name to Shorthand3 (Shorthand versions 1 and 2 are internal versions)
+[MinorFeature] split from script "Everything Findstr": http://www.autohotkey.com/forum/viewtopic.php?t=14164&postdays=0&postorder=asc&start=30
+[Feature] portability (ini_file in same folder and temp files in a subfolder)
+[MinorFeature] function sub_time to allow for debugging of efficiency of functions and subroutines
+[BugFix] changed FileDelete to FileRecycle to delete to Recycle Bin, if possible
+[MinorFeature] logging:
+		logging : 0	 	= no logging
+		logging : 1		= normal logging (settings)
+		logging : 2		= extended logging (each function, start and stop, except timers)
+		logging : 3 	= detailed logging (also steps inside each function)
+		logging : 4 	= more extended logging (also steps inside each function)
+		logging : 5 	= timer logging
+
+@v0.00.004 - Jan 05, 2011
+source:	http://www.autohotkey.com/forum/viewtopic.php?t=14164&postdays=0&postorder=asc&start=30
+[Feature] made the app folder into a var so changing it is easier 
+[Feature] pressing enter after typing will run/open the top line 
+[MinorFeature] changed the icon so the script will be easier to find in the systray 
+[Feature] changed the columns in the listview (now name, ext, path)

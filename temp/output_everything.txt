@@ -1,0 +1,2 @@
+C:\Program Files (x86)\Git\bin\git.exe
+C:\Program Files (x86)\Git\libexec\git-core\git.exe
