@@ -1,10 +1,19 @@
 SHORTHAND3
-
+http://www.productionhacks.com/2012/05/06/my-third-attempt-at-vim/
 -----------------------------
 TO DO
 -----------------------------
 	short term
 	-------------------------
+	- fix plugin loader: it doesn't behave right when a plugin changes
+	- plugin listview: plugin (name), category, version, and explanation section
+	- fix ( hits are not shown)
+	- optimize code: http://www.autohotkey.com/community/viewtopic.php?f=2&t=85455&p=536208#p536208
+		instead of 
+			MatchList_All = %MatchList_All%`n%ThisDBLine% 
+		use 
+			MatchList_All .= "`n" ThisDBLine 
+	- change search input box to what dropbox has: one box, inside: search icon/revolving thing - text - x to clear
 	- find a way to hide the trayicon for the plugin tester, maybe get the text of the script and append the #notrayicon line?
 	- add "only search" mode:
 		start menus, programs pinned to taskbar, desktop

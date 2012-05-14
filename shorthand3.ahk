@@ -7,7 +7,7 @@ Process, Priority,, High 	; increase performance for Hotkeys, Clicks, or Sends w
 SetBatchLines -1 				; maximum speed for loops
 SetWorkingDir %A_ScriptDir%	; unconditionally use its own folder as its working directory
 SetWinDelay,2					; for smooth resizing
-SendMode InputThenPlay 		; Recommended for new scripts due to its superior speed and reliability
+; SendMode InputThenPlay 		; Recommended for new scripts due to its superior speed and reliability
 DetectHiddenWindows ON
 SetTitleMatchMode 3			; 3: A window's title must exactly match WinTitle to be a match.
 
@@ -136,10 +136,7 @@ shorthand_reload|reload|WIN+C|send
 		{
 			if custom_content_%A_Index% <>	; if the variable is not empty
 			{
-				if total_custom =
-					total_custom := % custom_content_%A_Index%
-				else
-					total_custom := % total_custom . "`n" . custom_content_%A_Index%
+				total_custom .= "`n" custom_content_%A_Index%
 			}
 		}
 		SORT, total_custom, U	; makes the variable only have unique lines, to minimise memory footprint
@@ -259,6 +256,7 @@ return
 
 hotkey_run:	; this subroutine is fired when the user presses a hotkey, at which time the line it belongs to is found and the accompanying command is executed (run/send/password/whatever)
 	f_dbgtime(gen,dbg,A_LineNumber,"hotkey_run","start",1)
+	outputdebug A_ThisHotkey %A_ThisHotkey%
 	Loop, parse, list_hotkeys, `n		; the total file with all the hotkeys, hotkeys only in the total_custom var
 	{
 		Stringreplace, line, A_LoopField, `r`n,,all

@@ -25,32 +25,3 @@ Loop, Parse, Plugins, |
 }
 #include *i %A_ScriptDir%\plugin_list.ahk
 return
-
-/*
-LoadM:
-	; thanks to Berban for this one!
-	FileGetSize, Plugins, %A_ScriptDir%\Plugins.ahk
-	If !Plugins {
-		Plugins =
-		Loop, %A_ScriptDir%\Plugins\*.ahk
-		{
-			Plugins .= "|" SubStr(A_LoopFileName, 1, -1 - StrLen(A_LoopFileExt)), Includes .= "`n#Include, *i %A_ScriptDir%\Plugins\" A_LoopFileName
-		}
-		StringReplace, Plugins, Plugins, %A_Space%, _, All
-		StringTrimLeft, Plugins, Plugins, 1
-		Plugins = Plugins = %Plugins%`nLoop, Parse, Plugins, |`n`tIf IsLabel(A_LoopField)`n`t`tGosub `%A_LoopField`%`nGoto MainScript%Includes%
-		FileAppend, %Plugins%, %A_ScriptDir%\Plugins.ahk
-		Reload
-		ExitApp
-	} 
-	Else 
-	{
-		FileDelete, %A_ScriptDir%\Plugins.ahk
-		FileAppend, , %A_ScriptDir%\Plugins.ahk
-		FileSetAttrib, +H, %A_ScriptDir%\Plugins.ahk
-	}
-Return
-MainScript:
-	FileDelete, %A_ScriptDir%\Plugins.ahk
-Return
-*/

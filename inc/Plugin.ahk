@@ -7,25 +7,18 @@
 */
 
 Plugins:
+	f_dbgtime(gen,dbg,A_LineNumber,"Plugins","start",3)
+	f_dbgoutput(gen,dbg,A_LineNumber,0,"portable = " portable)
+
 	FileDelete %A_ScriptDir%\plugin_list.ahk	; this file will contain the #include lines for plugin_loader, to be appended by this label
 	; first we need to see if there are new or modified scripts
 	; so, 1) check the names of the plugins and timestamps of the plugins
 	Loop, %plugin_folder%\*.ahk
 	{
 		FileGetTime, LastModified, %A_LoopFileLongPath%
-		FileName := SubStr(A_LoopFileName, 1, -1 - StrLen(A_LoopFileExt))
-		if A_Index = 1
-		{
-			plugins_active_new = %A_LoopFileName%|%LastModified%
-			plugins_LoadList = %FileName%
-			plugins_IncList = #include *i %A_LoopFileLongPath%
-		}
-		else
-		{
-			plugins_active_new = %plugins_active_new%,%A_LoopFileName%|%LastModified%
-			plugins_LoadList = %FileName%|%plugins_LoadList%
-			plugins_IncList = #include *i %A_LoopFileLongPath%`n%plugins_IncList%
-		}
+		plugins_active_new .= A_LoopFileName "|" LastModified "," 
+		plugins_LoadList .= SubStr(A_LoopFileName, 1, -1 - StrLen(A_LoopFileExt)) "|"
+		plugins_IncList .= "#include *i " A_LoopFileLongPath "`n"
 	}
 	; now, collect the previously checked variable from the ini file
 	IniRead, plugins_active_old, %ini_file%, Plugins, List,
@@ -44,33 +37,30 @@ Plugins:
 			; see which plugin was changed and just check that plugin
 			loop, parse, plugins_active_new, `,
 			{
+				if A_LoopField =
+					break
 				if A_LoopField not in %plugins_active_old%
 				{
-					outputdebug %A_LoopField% changed: checking
+					f_dbgoutput(gen,dbg,A_LineNumber,3,A_LoopField " changed: checking")
 					StringLeft, OutputVar, A_LoopField, % InStr(A_LoopField, "|") - 1	; gets the filename
 					runwait, "%A_AhkPath%" "%A_ScriptDir%\app\plugin_tester.ahk" "%A_ScriptDir%\Plugins\%OutputVar%" "%A_ScriptDir%\plugins\disabled\"
 				}
 				else
-					outputdebug %A_LoopField% unchanged: checking next plugin
+					f_dbgoutput(gen,dbg,A_LineNumber,3,A_LoopField " unchanged: checking next plugin")
 			}
 		}
 		; now all the faulty plugins have been moved, so do another inventory and write that to the ini_file
+		; first empty the variables
+		plugins_active_new := 
+		plugins_LoadList :=
+		plugins_IncList :=
+		; and then fill them again
 		Loop, %plugin_folder%\*.ahk
 		{
 			FileGetTime, LastModified, %A_LoopFileLongPath%
-			FileName := SubStr(A_LoopFileName, 1, -1 - StrLen(A_LoopFileExt))
-			if A_Index = 1
-			{
-				plugins_active_new = %A_LoopFileName%|%LastModified%
-				plugins_LoadList = %FileName%
-				plugins_IncList = #include *i %A_LoopFileLongPath%
-			}
-			else
-			{
-				plugins_active_new = %plugins_active_new%,%A_LoopFileName%|%LastModified%
-				plugins_LoadList = %plugins_LoadList%|%FileName%
-				plugins_IncList = #include *i %A_LoopFileLongPath%`n%plugins_IncList%
-			}
+			plugins_active_new .= A_LoopFileName "|" LastModified "," 
+			plugins_LoadList .= SubStr(A_LoopFileName, 1, -1 - StrLen(A_LoopFileExt)) "|"
+			plugins_IncList .= "#include *i " A_LoopFileLongPath "`n"
 		}
 		IniWrite, %plugins_active_new%, %ini_file%, Plugins, List
 	}
@@ -79,4 +69,5 @@ Plugins:
 	; the plugins have either not been changed since last check, or have been rechecked
 	Run, "%plugin_loader%" "%ini_file%", %A_ScriptDir%, Min, PluginLoaderPID
 	f_dbgoutput(gen,dbg,A_LineNumber,3,A_ThisLabel " no new plugins found")
+	f_dbgtime(gen,dbg,A_LineNumber,"Plugins","finish",3)
 return

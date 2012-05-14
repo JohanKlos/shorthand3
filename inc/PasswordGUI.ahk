@@ -3,8 +3,8 @@
 	hash := Crypt.Encrypt.StrEncrypt(string,password,5,1) ; encrypts string using AES_128 encryption and MD5 hash
 	clipboard := hash
 	decrypted_string := Crypt.Encrypt.StrDecrypt(hash,password,5,1)				  ; decrypts the string using previously generated hash,AES_128 and MD5
-return
-GUI11_start:
+GUI11()
+{
 	GUI 11:destroy
 	if password_remark =
 		password_remark = In order to save a password, you need to log in.`nThis login will be used to encrypt and decrypt the passwords.`n`nNote: Pressing Cancel empties the login details.
@@ -17,8 +17,7 @@ GUI11_start:
 	GUI 11:ADD, Button, ys default gsub_gui11_ok vgui11_ok w50, OK
 	GUI 11:show, xcenter ycenter, %app_name% : Password
 	password_remark :=
-return
-
+}
 sub_gui11_ok:
 	GUI 11:submit, nohide
 	user_key = %login_user%%login_password%
