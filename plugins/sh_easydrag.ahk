@@ -1,6 +1,7 @@
 ; Description = Allows alt-left click to drag windows and alt-right click to resize windows.
 ; Version = 0.01
 #ErrorStdOut ; this line needs to be in every plugin
+#NoTrayIcon ; this line needs to be in every plugin
 
 sh_easydrag:
 	outputdebug Shorthand plugin loaded: sh_easydrag version 0.01 
