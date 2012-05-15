@@ -282,26 +282,19 @@ hotkey_run:	; this subroutine is fired when the user presses a hotkey, at which 
 					StringReplace, pressed_hotkey,pressed_hotkey,#,WIN%A_Space%					
 
 					gosub sub_getextandrun
-					pressed_hotkey :=	
+					pressed_hotkey :=	""
 				}
 				else if h_choice = password
-				{
-					; this will need to be updated when the encrypt/decrypt module is Added
-					SetKeyDelay, -1
-					Send %h_command%
-				}
+					Send %h_command%	; this will need to be updated when the encrypt/decrypt module is Added
 				else ; basically, this means "send"
-				{
-					SetKeyDelay, -1
 					Send %h_command%
-				}
 				f_dbgoutput(gen,dbg,A_LineNumber,2,"hotkey pressed: " h_hotkey " thereby executing """ h_command """ through " h_choice)
 			}
 		}
 	}
-	h_hotkey 	:=
-	h_command 	:=
-	h_choice 	:=
+	h_hotkey 	:= ""
+	h_command 	:= ""
+	h_choice 	:= ""
 	f_dbgtime(gen,dbg,A_LineNumber,"hotkey_run","stop",1)
 Return
 sub_getextandrun:
