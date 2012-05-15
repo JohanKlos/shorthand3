@@ -1,5 +1,8 @@
-; Description = Moves the mouse one pixel every 10 minutes, to keep the screensaver from engaging
+; Name = Foil Screensaver
+; Category = Enhancement
 ; Version = 0.03
+; Description = Moves the mouse one pixel every 10 minutes, to keep the screensaver from engaging
+#NoTrayIcon ; this line needs to be in every plugin
 #ErrorStdOut ; this line needs to be in every plugin
 
 sh_foilscreensaver:

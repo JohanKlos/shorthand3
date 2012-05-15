@@ -1,6 +1,9 @@
-; Description = Move the active window to the mousecursor with a hotkey
+; Name = WinMove
+; Category = Enhancement
 ; Version = 0.01
+; Description = Move the active window to the mousecursor with a hotkey
 #ErrorStdOut ; this line needs to be in every plugin
+#NoTrayIcon ; this line needs to be in every plugin
 
 sh_winmove:
 	outputdebug Shorthand plugin loaded: sh_winmove version 0.01 

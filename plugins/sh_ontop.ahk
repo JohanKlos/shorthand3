@@ -1,5 +1,7 @@
-; Description = Add hotkeys to put the active window on top or vice versa
+; Name = On Top
+; Category = Hotkey 
 ; Version = 0.02
+; Description = Add hotkeys (CTRL-ALT-up / down) to put the active window on top or vice versa
 #ErrorStdOut ; this line needs to be in every plugin
 
 sh_ontop:

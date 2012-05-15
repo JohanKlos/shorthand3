@@ -1,6 +1,9 @@
-; Description = Adds a hotkey Ctrl-1 to Notepad++ to execute the opened file
+; Name = Notepad Plus Plus run
+; Category = Hotkey 
 ; Version = 0.01
+; Description = Adds a hotkey Ctrl-1 to Notepad++ to execute the opened file
 #ErrorStdOut ; this line needs to be in every plugin
+#NoTrayIcon ; this line needs to be in every plugin
 
 sh_npprun:
 	outputdebug Shorthand plugin loaded: sh_npprun version 0.01 

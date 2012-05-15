@@ -1,6 +1,9 @@
-; Description = Window closer
+; Name = Window Closer
+; Category = Enhancement
 ; Version = 0.01
+; Description = Checks for and closes specified windows, based on wintitle and ahk_class
 #ErrorStdOut ; this line needs to be in every plugin
+#NoTrayIcon ; this line needs to be in every plugin
 
 sh_windowcloser:
 	outputdebug Shorthand plugin loaded: sh_windowcloser version 0.01

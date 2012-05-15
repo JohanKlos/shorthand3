@@ -1,6 +1,9 @@
-; Description = Adds a hotkey (alt-h) to search in the Autohotkey forums from an inputbox
+; Name = Quick Search AHK Forums
+; Category = Enhancement
 ; Version = 0.01
+; Description = Adds a hotkey (alt-h) to search in the Autohotkey forums from an inputbox
 #ErrorStdOut ; this line needs to be in every plugin
+#NoTrayIcon ; this line needs to be in every plugin
 
 /*
 source: http://www.autohotkey.com/community/viewtopic.php?p=296656#296656

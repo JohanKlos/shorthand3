@@ -1,6 +1,9 @@
-; Description = Browse path of process (CTRL-ALT-LEFT)
+; Name = Process Path
+; Category = Hotkey 
 ; Version = 0.01
-; #ErrorStdOut ; this line needs to be in every plugin
+; Description = Browse path of current process (CTRL-ALT-LEFT)
+#ErrorStdOut ; this line needs to be in every plugin
+#NoTrayIcon ; this line needs to be in every plugin
 
 sh_processpath:
 	hotkey,^!left,hotkey_getprocesspath

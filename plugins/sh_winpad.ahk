@@ -1,6 +1,9 @@
-; Description = Based on winpad version 1.14, without EasyKey, as it was interfering with Shorthand hotkeys
+; Name = WindowPad
+; Category = Enhancement
 ; Version = 1.14
+; Description = Based on WindowPad version 1.14, without EasyKey, as it was interfering with Shorthand hotkeys
 #ErrorStdOut ; this line needs to be in every plugin
+#NoTrayIcon ; this line needs to be in every plugin
 
 sh_winpad:
 	outputdebug Shorthand plugin loaded: sh_winpad version 1.14 

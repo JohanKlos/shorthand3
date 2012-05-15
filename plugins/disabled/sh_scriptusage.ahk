@@ -1,5 +1,9 @@
-; Description = Get the CPU and Memory usage of the current script
+; Name = Script Usage CPUs
+; Category = Enhancement
 ; Version = 0.01
+; Description = Get the CPU and Memory usage of the current script
+#ErrorStdOut ; this line needs to be in every plugin
+#NoTrayIcon ; this line needs to be in every plugin
 
 sh_scriptusage:
 	outputdebug Shorthand plugin loaded: sh_scriptusage version 0.01 

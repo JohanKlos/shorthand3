@@ -7,7 +7,7 @@ Process, Priority,, High 	; increase performance for Hotkeys, Clicks, or Sends w
 SetBatchLines -1 				; maximum speed for loops
 SetWorkingDir %A_ScriptDir%	; unconditionally use its own folder as its working directory
 SetWinDelay,2					; for smooth resizing
-; SendMode InputThenPlay 		; Recommended for new scripts due to its superior speed and reliability
+; SendMode InputThenPlay 		; commented because it made the send not work all the time...
 DetectHiddenWindows ON
 SetTitleMatchMode 3			; 3: A window's title must exactly match WinTitle to be a match.
 
@@ -256,7 +256,6 @@ return
 
 hotkey_run:	; this subroutine is fired when the user presses a hotkey, at which time the line it belongs to is found and the accompanying command is executed (run/send/password/whatever)
 	f_dbgtime(gen,dbg,A_LineNumber,"hotkey_run","start",1)
-	outputdebug A_ThisHotkey %A_ThisHotkey%
 	Loop, parse, list_hotkeys, `n		; the total file with all the hotkeys, hotkeys only in the total_custom var
 	{
 		Stringreplace, line, A_LoopField, `r`n,,all
@@ -344,7 +343,9 @@ sub_getextandrun:
 	}
 	else
 	{
-		if RunAsAdmin = 1
+		if command_ext_split = lnk
+			run %command_path%\%run_command%
+		else if RunAsAdmin = 1
 		{
 			if selected_program <>
 				run, %selected_program% %run_command% %arguments% , %command_path% , UseErrorLevel
@@ -352,8 +353,9 @@ sub_getextandrun:
 				run, %run_command% %arguments% , %command_path% , UseErrorLevel
 		}
 		else
+		{
 			RunAsUser(run_command, Arguments, command_path)
-		
+		}
 		GoSub sub_errorlevel		; needed so the msgbox contains the right feedback to the user pertaining the error
 		f_dbgoutput(gen,dbg,A_LineNumber,2,"sub_getextandrun = " run_command " " arguments " in path " command_path)
 	}
@@ -934,8 +936,7 @@ GUI2:	; the GUI with the preferences and settings
 	
 	; "Plugins"
 	GUI 2:Add, GroupBox, x%GroupBoxX% y%pref_treey% vp1c1c4_plugins w480 h370 section hidden, Plugins
-	
-	GUI 2:Add, ListView, xs+20 yp+20 r17 w440 vlv_plugins glv_plugins_click AltSubmit -multi checked hidden, Name|Description|Version
+	GUI 2:Add, ListView, xs+20 yp+20 r17 w440 vlv_plugins glv_plugins_click AltSubmit -multi checked hidden, Name|Version|Category|Description|Filename
 	GoSub lv_plugins_fill
 	GUI 2:Add, Button, xs+20 ys+340 w75 vlv_plugins_edit glv_plugins_edit hidden, Edit
 	plugins = p1c1c4_plugins|lv_plugins|lv_plugins_edit
@@ -1104,7 +1105,7 @@ lv_plugins_fill:
 		if A_LoopFileName <>
 		{
 			GoSub sub_getplugindetails
-			LV_Add("check", A_LoopFileName, desc, ver)
+			LV_Add("check", name, ver, cat, desc, A_LoopFileName)
 		}
 	}
 	loop, %A_ScriptDir%\plugins\disabled\*.ahk
@@ -1112,13 +1113,16 @@ lv_plugins_fill:
 		if A_LoopFileName <>
 		{
 			GoSub sub_getplugindetails
-			LV_Add("uncheck", A_LoopFileName, desc, ver)
+			LV_Add("uncheck", name, ver, cat, desc, A_LoopFileName)
 		}
 	}
+	; name|version|category
 	LV_ModifyCol(1,"Sort")	; to sort the active and disabled plugins alphabetically
 	LV_ModifyCol(1,"AutoHdr")
 	LV_ModifyCol(2,"AutoHdr")
 	LV_ModifyCol(3,"AutoHdr")
+	LV_ModifyCol(4,"AutoHdr")
+	LV_ModifyCol(5,"AutoHdr")
 return
 lv_plugins_click:
 	; get the name and state of the plugin (enabled or disabled)
@@ -1144,7 +1148,7 @@ lv_plugins_check:
 		return
 	gosub lv_plugins_selected
 	selected_plugin := A_EventInfo
-	LV_GetText(plugin_name, selected_plugin, 1)
+	LV_GetText(plugin_name, selected_plugin, 5)
 
 	; check if the plugin is checked or unchecked
 	RowNumber = 0  ; This causes the first loop iteration to start the search at the top of the list.
@@ -1171,17 +1175,28 @@ lv_plugins_edit:
 	Run, "%text_editor%" "%plugin_path%%plugin_name%"
 return
 sub_getplugindetails:
-	FileReadLine, desc, %A_LoopFileFullPath%, 1
-	if desc contains Description
-		StringReplace, desc, desc, `;%A_Space%Description%A_Space%=%A_Space%
-	else
-		desc = N/A
-	FileReadLine, ver, %A_LoopFileFullPath%, 2
-	if ver contains Version
-		StringReplace, ver, ver, `;%A_Space%Version%A_Space%=%A_Space%
-	else
-		Ver = N/A	
+; Name = Window Closer
+; Category = Enhancement
+; Version = 0.01
+; Description = Checks for and closes specified windows, based on wintitle and ahk_class
+	name = N/A
+	cat = N/A
+	ver = N/A
+	desc = N/A
+	Loop, 5	; read the first 5 lines of each plugin
+	{
+		FileReadLine, line, %A_LoopFileFullPath%, %A_Index%
+		parse_plugin(line,"Name","Name")
+		parse_plugin(line,"Version","ver")
+		parse_plugin(line,"Category","cat")
+		parse_plugin(line,"Description","desc")
+	}
 return
+parse_plugin(line,descriptor,desc_short)
+{
+	if line contains %descriptor%%A_Space%=%A_Space%
+		StringReplace, %desc_short%, line, `;%A_Space%%descriptor%%A_Space%=%A_Space%
+}
 lv_custom_files_fill:
 	; fills the GUI2 listview with the custom_files
 	; change the default GUI so the right listview is filled
@@ -1219,8 +1234,7 @@ lv_custom_file_click:
 	f_dbgtime(gen,dbg,A_LineNumber,"lv_custom_file_click","stop",2)
 return
 lv_custom_file_add_new:
-	; adds a custom_file to the GUI2 listview and writes it to the ini_file
-	
+	; adds a custom_file to the GUI2 listview and writes it to the ini_file	
 	IniWrite, % custom_file_%empty_custom_number%, %ini_file%, Files, custom_file_%empty_custom_number%
 	gosub lv_custom_files_fill	; repopulate the listview
 return
@@ -2082,6 +2096,7 @@ timer_execute_search:
 	f_dbgtime(gen,dbg,A_LineNumber,"timer_execute_search","stop",2)
 return
 timer_check_find:
+	GUIControl,, status_text, %find_text% (ctrl x to cancel)
 	loop
 	{
 		if app_pid =
@@ -2095,12 +2110,11 @@ timer_check_find:
 		process, exist, %app_PID%
 		if ( errorlevel == "0" ) ; search is done, break the loop
 			break
-		outputdebug %find_text% (ctrl x to cancel)
 	}
 	hotkey = 0
 	Hotkey, ^x, off
-	outputdebug %find_text% done
 	SetTimer, timer_check_find, off
+	GoSub update_status_text	; this updates the status_text	
 return
 find_interrupt:
 	if ( app_PID == "" )
@@ -2122,6 +2136,7 @@ update_hitlist:	; in a separate subroutine so we can call it when a filter is en
 	missfolders := 0
 	missextensions := 0
 	missignores	:= 0
+	missrestricted := 0
 	; search for hits in the history log
 	if use_history = 1
 		GoSub sub_command_guess_history
@@ -2212,7 +2227,10 @@ update_hitlist:	; in a separate subroutine so we can call it when a filter is en
 			GoSub select_hitlist	; select the GUI and listview we want to fill
 			LV_Add("", OutFileName, OutExtension, command_path, score)	; Adds the results to the hitlist
 		}
-	}
+	}	
+	; outputdebug misscounter = 	%missfolders% folders + %missextensions% extensions + %missignores% ignored + %missrestricted% outside restricted
+	misscounter += missfolders + missextensions + missignores + missrestricted
+
 	if hitcounter > 0
 	{
 		GUIControl, show, hitlist
@@ -2230,8 +2248,7 @@ update_hitlist:	; in a separate subroutine so we can call it when a filter is en
 		; move the status_text though
 		GUIControl, show, status_text
 	}
-	; misscounter = 	%missfolders% folders + %missextensions% extensions + %missignores% ignored
-	misscounter := missfolders + missextensions + missignores + missrestricted
+	
 	if command_search =
 	{
 		GUIControl, hide, hitlist
