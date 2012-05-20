@@ -31,13 +31,17 @@ script_PID := DllCall("GetCurrentProcessId")	; needed for the updater (to waitcl
 	GoSub Menu
 	GoSub Checks
 	GoSub GUI
+	use_everything := 1
 	
 	#include %A_ScriptDir%\inc\plugin.ahk			; sorts plugin checking and loading
+	#include %A_ScriptDir%\inc\history.ahk			; history functions for executed functions
 	
 	#include %A_ScriptDir%\inc\Crypt.ahk			; required for encrypting and decrypting a string
 	#include %A_ScriptDir%\inc\CryptFoos.ahk		; required for encrypting and decrypting a string
 	#include %A_ScriptDir%\inc\CryptConst.ahk		; required for encrypting and decrypting a string
 	#include %A_ScriptDir%\inc\PasswordGUI.ahk	; required for encrypting and decrypting a string
+
+	#include %A_ScriptDir%\inc\MFT.ahk				; alternative to "everything.exe" and "es.exe"	
 Return
 check_exist_folder(folder)
 {
@@ -360,25 +364,6 @@ sub_getextandrun:
 	}
 	gosub sub_clear
 return
-fill_history(command)
-{
-	global
-	f_dbgtime(gen,dbg,A_LineNumber,"fill_history","start",1)
-	f_dbgoutput(gen,dbg,A_LineNumber,3,"fill_history: " use_history " adding " command)
-
-	fileread, history, %log_history%
-	history = %command%,%history%
-
-	StringReplace, history , history , \., , , ALL			; gets rid of most ,, in there
-	StringReplace, history , history , `,`, , `, , ALL		; gets rid of most ,, in there
-
-	Sort , history , U
-	filedelete %log_history%
-	fileappend, %history%,%log_history%
-	score_history_read := history
-	f_dbgtime(gen,dbg,A_LineNumber,"fill_history","stop",1)
-	return
-}
 menu:
 	f_dbgtime(gen,dbg,A_LineNumber,"Menu","start",1)
 	; Menu, Tray, icon, %icon_shorthand%	; moved to as high in the script as possible, to prevent flickering
@@ -491,19 +476,22 @@ return
 
 checks:
 	f_dbgtime(gen,dbg,A_LineNumber,"Checks","start",1)
-	ifnotexist %app_find%
+	if use_everything = 1
 	{
-		msgbox , 4, %app_name% %app_version%, Essential file not found, click yes to download the necessary files (es.exe and everything.exe) to "%app_folder%\".
-		ifmsgbox Yes
+		ifnotexist %app_find%
 		{
-			ifnotexist %app_folder%
-				FileCreateDir %app_folder%
-			ifnotexist %app_find%
-				URLDownloadToFile , http://www.voidtools.com/es.exe , %app_find%
-			ifnotexist %app_everything%
-				URLDownloadToFile , http://www.voidtools.com/Everything-1.2.1.371.exe , %app_everything%
+			msgbox , 4, %app_name% %app_version%, Essential file not found, click yes to download the necessary files (es.exe and everything.exe) to "%app_folder%\".
+			ifmsgbox Yes
+			{
+				ifnotexist %app_folder%
+					FileCreateDir %app_folder%
+				ifnotexist %app_find%
+					URLDownloadToFile , http://www.voidtools.com/es.exe , %app_find%
+				ifnotexist %app_everything%
+					URLDownloadToFile , http://www.voidtools.com/Everything-1.2.1.371.exe , %app_everything%
+			}
+			exitapp
 		}
-		exitapp
 	}
 	if check_for_updates_on_startup = 1
 		GoSub check_update_automatic
@@ -624,26 +612,6 @@ MoveGui: ; berban : Allows for moving the GUI through the background image on th
 	if gui_easymove = 1
 		PostMessage, 0xA1, 2,,, A ; berban
 Return
-gui_history:
-	; this subroutine parses the history file
-	if use_history = 1
-	{
-		history_list :=
-		fileread, history, %log_history%
-		loop , parse , history, `,
-		{
-			if A_LoopField <>
-			{
-				if A_Index = 1
-					history_list = %A_LoopField%
-				else
-					history_list = %A_LoopField%,%history_list%
-			}
-		}
-		StringReplace, history_list , history_list , `r`n,,ALL
-		history :=
-	}
-return
 GUI_hide:
 	f_dbgtime(gen,dbg,A_LineNumber,"GUI_hide","start",3)
 	CRITICAL ON		; critical so the fading is not interrupted by a hotkey starting the fadein
@@ -2043,8 +2011,17 @@ timer_execute_search:
 	; the actual search
 	app_pid :=	; clear the variable before use
 	find_text = Searching for a file
-	settimer, timer_check_find	; this timer sleeps 1 second and then starts checking for the existence of the %app_PID%
-	runwait, %comspec% %debug% ""%app_find%" "%command_search%" -n %max_results% > "%result_filename%"" , %A_ScriptDir% , hide, app_PID
+
+	if use_everything = 1
+	{
+		settimer, timer_check_find	; this timer sleeps 1 second and then starts checking for the existence of the %app_PID%
+		runwait, %comspec% %debug% ""%app_find%" "%command_search%" -n %max_results% > "%result_filename%"" , %A_ScriptDir% , hide, app_PID
+	}
+	else
+	{
+		filelist:=ListMFTfiles(substr(command_search,1,2),substr(command_search,4),"|",true,num)
+		fileappend, %filelist%, %result_filename%
+	}
 	
 	f_dbgtime(gen,dbg,A_LineNumber,"app_find","stop",2)
 			
@@ -2130,9 +2107,6 @@ update_hitlist:	; in a separate subroutine so we can call it when a filter is en
 	missextensions := 0
 	missignores	:= 0
 	missrestricted := 0
-	; search for hits in the history log
-	if use_history = 1
-		GoSub sub_command_guess_history
 
 	; search for hits in the custom_files (in the variable total_custom, that is)
 	GoSub sub_command_guess_custom
@@ -2208,16 +2182,22 @@ update_hitlist:	; in a separate subroutine so we can call it when a filter is en
 					continue
 				}
 			}
-			/*
-			; having it here would activate it for every hit, slowing everything down a lot
-			; if we're keeping score, assign scores the each hit
-			if use_score = 1
-				gosub calculate_score
-			else	; hide the column
-				LV_ModifyCol(4, 0)
-			*/
 			hitcounter += 1	; here for the filtered results, this subroutine only gets here if there is no filter applicable
 			GoSub select_hitlist	; select the GUI and listview we want to fill
+			if use_history = 1
+			{
+				ifexist %log_history%	; check if a history file exists, if not, no sense in doing the part below
+				{
+					; if history is empty, load it from the log
+					if history =
+						FileRead, history, %log_history%
+					if InStr(history,OutFileName) ; command_search in %history% ; contains %command_search%
+					{
+						OutFileName = %OutFileName% (history)
+						score := score_history
+					}
+				}
+			}
 			LV_Add("", OutFileName, OutExtension, command_path, score)	; Adds the results to the hitlist
 		}
 	}	
@@ -2290,80 +2270,9 @@ update_status_text:
 		text_search_time = Found %hitcounter% %hits% in %elapsed_time% %seconds% (%misscounter% %misshits% not shown)
 	GUIControl,, status_text, %text_search_time%
 return
-calculate_score:
-	; this subroutine will calculate the score
-	f_dbgtime(gen,dbg,A_LineNumber,"calculate_score","start",0)
-	; empty the variable
-	score :=
-	if use_history = 1
-	{
-		if score_history <> 0
-		{
-			ifexist %log_history%
-			{
-				; if history is empty, load it
-				if score_history_read =
-					FileRead, score_history_read, %log_history%
-				if score_history_read contains %command_search%
-				{
-					; count how many times it exists
-					loop , parse, score_history_read , `,
-					{
-						if A_LoopField contains %command_search%
-							i += 1
-					}
-					if i = 0
-						i = 1
-					score += score_history * i
-					i := 0
-					f_dbgoutput(gen,dbg,A_LineNumber,3,"use_history extra score : " score " for " command_path)
-				}
-			}
-		}
-	}
-	f_dbgtime(gen,dbg,A_LineNumber,"calculate_score","stop",0)
-return
 select_hitlist:
 	GUI, 1:Default	; just to make sure we fill the right GUI
 	GUI, 1:ListView, Hitlist	; and the right listview in that GUI
-return
-sub_command_guess_history:
-	; this subroutine compares the command_search variable to the history file, adding each hit
-	ifexist %log_history%
-	{
-		; if history is empty, load it
-		if score_history_read =
-			FileRead, score_history_read, %log_history%
-		if score_history_read contains %command_search%
-		{
-			loop , parse, score_history_read , `,
-			{
-				score :=
-				if A_LoopField contains %command_search%
-				{
-					; count how many the file has been run
-					path := A_LoopField
-					; this only does the first one
-					if path not in %filled%	; to prevent it being added more than once
-					{
-						SplitPath, path , name, OutDir, OutExtension, OutNameNoExt, OutDrive
-						score += score_history
-						hitcounter += 1	; here for the filtered results, this subroutine only gets here if there is no filter applicable
-						GoSub select_hitlist
-						filled = %path%,%filled%
-						name = %name% (history)
-;						if use_score = 1
-							LV_Add("", name, OutExtension, Path, Score)	; Adds the results to the hitlist
-;						else
-;							LV_Add("", name, OutExtension, Path)	; Adds the results to the hitlist
-;						outputdebug LV_add history %command_search% > %name%, %outextension%, %path%, %score%
-					; problem: this will show the item twice, we need to do a check later on to prevent a double, based on %filled% and a history found
-					}
-				}
-			}
-			f_dbgoutput(gen,dbg,A_LineNumber,3,"use_history extra score : " score " for " command_path)
-		}
-	}
 return
 sub_command_guess_custom:
 	f_dbgtime(gen,dbg,A_LineNumber,"sub_command_guess_custom","start",2)
