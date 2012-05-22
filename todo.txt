@@ -1,27 +1,18 @@
 SHORTHAND3
-http://www.productionhacks.com/2012/05/06/my-third-attempt-at-vim/
 -----------------------------
 TO DO
 -----------------------------
 	short term
 	-------------------------
-	- fix plugin loader: it doesn't behave right when a plugin changes
-	- plugin listview: plugin (name), category, version, and explanation section
-	- fix ( hits are not shown)
-	- optimize code: http://www.autohotkey.com/community/viewtopic.php?f=2&t=85455&p=536208#p536208
-		instead of 
-			MatchList_All = %MatchList_All%`n%ThisDBLine% 
-		use 
-			MatchList_All .= "`n" ThisDBLine 
+	- fix score sorting (it seems to be ascending instead of descending)
+	- use Self Script Updater and make a GUI with URLGet
 	- change search input box to what dropbox has: one box, inside: search icon/revolving thing - text - x to clear
 	- find a way to hide the trayicon for the plugin tester, maybe get the text of the script and append the #notrayicon line?
-	- add "only search" mode:
-		start menus, programs pinned to taskbar, desktop
-		%AppData%\Microsoft\Internet Explorer\Quick Launch\User Pinned\TaskBar
-		(add icons then?)
+	- plugin: recycle bin emptier
 	- plugin: hide/move by sliding
 	- plugin: timer
 	- menu plugin
+	- only search items to GUI2
 	- history is not working after you refine a search (search and then add letters to the search term)
 	- add "stick to top" and "stick to bottom"
 	- add "transparency" with slider, maybe with mouseover to 0 and off to like 120?

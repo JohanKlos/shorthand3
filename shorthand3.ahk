@@ -1,4 +1,5 @@
 #Persistent
+; #Warn
 #SingleInstance Force
 #NoEnv  						; Recommended for performance and compatibility with future AutoHotkey releases.
 #MaxThreadsPerHotkey 1		; enable correction on accidental press of several hotkeys (only last pressed hotkey will fire)
@@ -163,8 +164,7 @@ parse_custom:	; parse the lines in %total_custom% (containing the contents of ea
 			; first, get rid of any spaces or tabs
 			StringReplace, commented, A_LoopField, %A_Space%,, All
 			StringReplace, commented, commented, %A_Tab%,, All
-			StringLeft, firstchar, commented, 1
-			if firstchar = `;
+			if SubStr(commented,1,1) = "`;"
 			{
 				f_dbgoutput(gen,dbg,A_LineNumber,3,"skipped custom_file line = """ A_LoopField """ because of ""`;""")
 				continue
@@ -305,9 +305,16 @@ sub_getextandrun:
 	; check if there's a parameter (it will be after the extension)
 	if command_ext contains %A_Space%
 	{
+		command_ext_split := Substr(command_ext,1,InStr(command_ext, A_Space))
+		StringReplace, arguments, command_ext, %command_ext_split%,, ALL
+		
+		/*
 		Position := InStr(command_ext, A_Space)
 		StringLeft, command_ext_split, command_ext, %position%
-		StringReplace, arguments, command_ext, %command_ext_split%,, ALL
+		
+		StringLeft, command_ext_split3, command_ext, InStr(command_ext, A_Space)
+		*/		
+		outputdebug %command_ext_split%`n%command_ext_split2%`n%command_ext_split3%
 	}
 	else
 		command_ext_split := command_ext
@@ -453,7 +460,8 @@ menu_browse_plugins:
 return
 menu_file_open:	; opens a certain 
 	IniRead, text_editor, %ini_file%, programs, text_editor, %A_Space%
-	StringTrimLeft, file_open, A_ThisMenuItem, 5	; gets rid of "Open " of the menu item
+	file_open := SubStr(A_ThisMenuItem,6)
+	; StringTrimLeft, file_open, A_ThisMenuItem, 5	; gets rid of "Open " of the menu item
 	ifexist %text_editor%
 		run, %text_editor% "%file_open%"
 	else
@@ -536,20 +544,23 @@ GUI:
 		GUI Add, Picture, x7 y8 h23 w%gui_w_edit_s% vgui_skin_back BackgroundTrans, %A_ScriptDir%\img\skin_back.png
 		GUI Add, Picture, xp y5 h4 w%gui_w_edit_s% vgui_skin_top BackgroundTrans, %A_ScriptDir%\img\skin_top.png
 		GUI Add, Picture, xp y29 h2 w%gui_w_edit_s% vgui_skin_bottom BackgroundTrans, %A_ScriptDir%\img\skin_bottom.png
-		GUI Add, Edit, x30 y14 h12 w%gui_w_edit% -E0x200 vcommand_search gsearch section,
 		GUI Add, Picture, x9 y13 h16 w16 vtarget_icon gGUIContextMenu Icon1, %icon_shorthand%
+		GUI Add, Edit, x30 y14 h12 w%gui_w_edit% -E0x200 vcommand_search gsearch section,
 	}
 	else
 	{
-		GUI Add, Edit, x30 y6 w%gui_w_edit% vcommand_search gsearch section r1,	
 		GUI Add, Picture, x7 y9 h16 w16 vtarget_icon gGUIContextMenu Icon1, %icon_shorthand%
+		GUI Add, Edit, x30 y6 w%gui_w_edit% vcommand_search gsearch section r1,	
 	}
+	gui_xempty = 0
+	if gui_xempty = 1
+		GUI Add, Text, ys h17 w10 y8 vsub_clear ggui_xempty left , x	
 	; row one of the main GUI (the simple portion, the command_search editbox, toggle simple/advanced and the settings)
 	GUIControl, focus, command_search
 	if advanced_border = 1
-		GUI Add, Text, ys+1 h20 w75 vset_advanced gset_advanced border center, advanc&ed
+		GUI Add, Button, ys+1 h20 w72 vset_advanced gset_advanced border center, advanc&ed
 	else
-		GUI Add, Text, ys+2 h20 w75 vset_advanced gset_advanced center, advanc&ed
+		GUI Add, button, ys+1 h21 w72 vset_advanced gset_advanced center, advanc&ed
 
 	GUI Add, Picture, ys+3 h16 w16 vpreferences_icon gGUI2 Icon1, %icon_settings%	; this control to be moved through GUISize
 	GUI Add, Button, ys-1 gcommand_run default hidden, OK
@@ -690,6 +701,9 @@ GUI_show:
 	}
 	GUI_hidden = 0
 	GUIControl, focus, command_search
+	if gui_xempty = 1
+		GUIControl,, sub_clear, x
+	
 	CRITICAL OFF
 	f_dbgtime(gen,dbg,A_LineNumber,"GUI_show","stop",3)
 return
@@ -1839,6 +1853,7 @@ GUI_autohide:
 	{
 		GUI_autohide = 1
 		Menu, Context, Check, Autohide
+		SetTimer timer_autohide, 1000
 	}
 	else
 	{
@@ -1924,6 +1939,8 @@ GUI_Add_browse:
 return
 search:
 	SetTimer, timer_execute_search, -%search_delay% ; Delay after typing stops, to prevent the script from firing prematurely
+	if gui_xempty = 1
+		GUIControl,, sub_clear, x
 return
 sub_empty:
 	GoSub select_hitlist	; makes sure we select the right listview to empty
@@ -1936,6 +1953,9 @@ sub_empty:
 			GUI, show, autosize	; needed to resize the GUI
 	}
 	;GUIControl,, status_text, Fill search field...	; empty the status bar
+return
+gui_xempty:
+	GUIControl,, command_search, 	; empties the command_search editbox
 return
 sub_clear:
 	if GUI_hideafterrun = 1 			; hide the GUI after run
@@ -1964,8 +1984,7 @@ timer_execute_search:
 		f_dbgtime(gen,dbg,A_LineNumber,"timer_execute_search","stop",2)
 		return
 	}
-	StringLeft, c, command_search, 2
-	if ( c == "? " )
+	if ( Substr(command_search,1,2) = "? " )
 	{
 		GoSub sub_empty
 		f_dbgtime(gen,dbg,A_LineNumber,"timer_execute_search","stop",2)
@@ -2122,10 +2141,7 @@ update_hitlist:	; in a separate subroutine so we can call it when a filter is en
 		command_path := A_LoopField
 		SplitPath, command_path , OutFileName, OutDir, OutExtension, OutNameNoExt, OutDrive
 		if OutExtension contains %A_Space%
-		{
-			StringGetPos , OutExtension_space, OutExtension, %A_Space%
-			StringLeft , OutExtension , OutExtension , %OutExtension_space%
-		}
+			OutExtension3 := SubStr(OutExtension,1,Instr(OutExtension,A_Space))
 		if OutFileName <>		; prevents empty lines
 		{
 			; first filter: if the user doesn't want folders to show up in his result
@@ -2199,6 +2215,7 @@ update_hitlist:	; in a separate subroutine so we can call it when a filter is en
 				}
 			}
 			LV_Add("", OutFileName, OutExtension, command_path, score)	; Adds the results to the hitlist
+			score :=
 		}
 	}	
 	; outputdebug misscounter = 	%missfolders% folders + %missextensions% extensions + %missignores% ignored + %missrestricted% outside restricted
@@ -2237,6 +2254,10 @@ update_hitlist:	; in a separate subroutine so we can call it when a filter is en
 	GUIControl, 1:+Redraw, Hitlist
 	
 	GoSub update_status_text	; this updates the status_text
+	OutFileName :=
+	OutExtension :=
+	command_path :=
+	score := 
 
 	f_dbgtime(gen,dbg,A_LineNumber,"update_hitlist","stop",2)
 return
@@ -2303,10 +2324,12 @@ sub_command_guess_custom:
 					score += score_custom	; the score for being in a custom file 
 					hitcounter += 1	; here for the filtered results, this subroutine only gets here if there is no filter applicable
 					GoSub select_hitlist
+					name := name " (custom)"
 					if use_score = 1
 						LV_Add("", name, OutExtension, Path, Score)	; Adds the results to the hitlist
 					else
 						LV_Add("", name, OutExtension, Path)	; Adds the results to the hitlist
+					score :=
 				}
 			}
 		}
@@ -2372,15 +2395,15 @@ command_run_with:
 	command_run_with = 0
 return
 command_run:
-	StringLeft, c, command_search, 2
 	if command_search = "" ; needs to be here in case user presses enter on an empty search command
 	{
 		f_dbgtime(gen,dbg,A_LineNumber,"timer_execute_search","stop",3)
 		return
 	}
-	else if ( c == "? " )
+	else if ( SubStr(command_search,1,2) == "? " )
 	{
-		StringTrimLeft, command_search, command_search, 2
+		command_search := SubStr(command_search,3)
+		; StringTrimLeft, command_search, command_search, 2
 		StringReplace, command_search, command_search, %A_Space%, `%20, ALL
 		run, https://www.google.com/#hl=en&output=search&sclient=psy-ab&q=%command_search%
 		GoSub sub_clear
