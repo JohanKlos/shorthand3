@@ -23,8 +23,6 @@ if not A_IsAdmin
 	ExitApp
 }
 
-GUI_name			= %app_name% %app_version% %beta%
-GUI2_name			= %app_name% : Preferences
 icon_shorthand	= %A_ScriptDir%\img\icon_shorthand.ico
 Menu, Tray, icon, %icon_shorthand%
 

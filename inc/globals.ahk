@@ -6,6 +6,9 @@ gen.ini_location	:=	A_ScriptDir
 gen.ini_file		:=	gen.ini_location "\portable.ini"
 gen.tempfolder 	:= 	A_ScriptDir "\temp"
 
+GUI_name			= %app_name% %app_version% %beta%
+GUI2_name			= %app_name% : Preferences
+
 app_folder			= %A_ScriptDir%\app
 check_exist_folder(app_folder)
 
@@ -129,6 +132,8 @@ Read_ini:
 	IniRead, list_ignores, %ini_file%, GUI, list_ignores, %A_Space%		; ignored strings
 	if list_ignores =
 		list_ignores = prefetch,cache
+
+	IniRead, show_lnk, %ini_file%, GUI, show_lnk, 0							; when 0, the results will show the path to the actual file, instead of the .lnk filename
 
 	IniRead, restricted_mode, %ini_file%, GUI, restricted_mode, 1			; 1 means it'll only show hits in one of the restricted folders
 	A_TaskbarPinned = %AppData%\Microsoft\Internet Explorer\Quick Launch\User Pinned\TaskBar

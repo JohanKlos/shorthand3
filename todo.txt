@@ -4,15 +4,17 @@ TO DO
 -----------------------------
 	short term
 	-------------------------
-	- fix score sorting (it seems to be ascending instead of descending)
-	- use Self Script Updater and make a GUI with URLGet
+	- add context menu to add custom entries (add hotkey option and everything)
+	- add context menu to delete custom entries
 	- change search input box to what dropbox has: one box, inside: search icon/revolving thing - text - x to clear
+	- add timestamp to history (so we can prune history entries that are > 30 days old)
+	- use Self Script Updater and make a GUI with URLGet
 	- find a way to hide the trayicon for the plugin tester, maybe get the text of the script and append the #notrayicon line?
 	- plugin: recycle bin emptier
 	- plugin: hide/move by sliding
 	- plugin: timer
-	- menu plugin
-	- only search items to GUI2
+	- menu plugin entries
+	- add "only search" option and items to GUI2
 	- history is not working after you refine a search (search and then add letters to the search term)
 	- add "stick to top" and "stick to bottom"
 	- add "transparency" with slider, maybe with mouseover to 0 and off to like 120?

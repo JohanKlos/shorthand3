@@ -289,7 +289,9 @@ hotkey_run:	; this subroutine is fired when the user presses a hotkey, at which 
 					pressed_hotkey :=	""
 				}
 				else if h_choice = password
-					Send %h_command%	; this will need to be updated when the encrypt/decrypt module is Added
+					SendRaw %h_command%	; this will need to be updated when the encrypt/decrypt module is Added
+				else if h_choice = sendraw
+					SendRaw %h_command%
 				else ; basically, this means "send"
 					Send %h_command%
 				f_dbgoutput(gen,dbg,A_LineNumber,2,"hotkey pressed: " h_hotkey " thereby executing """ h_command """ through " h_choice)
@@ -389,7 +391,7 @@ menu:
 	Loop, %custom_files%
 	{
 		ifexist % custom_file_%A_Index%
-			Menu, menu_files, Add, % "Open " . custom_file_%A_Index%, menu_file_open	; beware of the StringTrimLeft in menu_file_open !
+			Menu, menu_files, Add, % "Open " . custom_file_%A_Index%, menu_open	; beware of the StringTrimLeft in menu_open !
 	}
 	Loop, %A_ScriptDir%\plugins\*.ahk
 	{
@@ -399,7 +401,7 @@ menu:
 		{
 			Menu, plugins, Add, Enabled Plugins, menu_browse_plugins
 		}
-		Menu, plugins, Add, % "Open " . A_LoopFileLongPath, menu_file_open
+		Menu, plugins, Add, % "Open \plugins\" . A_LoopFileName, menu_open
 	}
 	Loop, %A_ScriptDir%\plugins\disabled\*.ahk
 	{
@@ -410,7 +412,7 @@ menu:
 			Menu, plugins, Add
 			Menu, plugins, Add, Disabled Plugins, menu_browse_plugins
 		}
-		Menu, plugins, Add, % "Open " . A_LoopFileLongPath, menu_file_open
+		Menu, plugins, Add, % "Open \plugins\disabled\" . A_LoopFileName, menu_open
 	}
 	Menu, plugins, Add
 	; this is where any plugin menu's will appear
@@ -423,7 +425,14 @@ menu:
 		Menu, Lists, Add, KeyHistory, list_KeyHistory
 		Menu, Lists, Add, ListLines, list_lines
 		Menu, Lists, Add, ListVars, list_vars
-		Menu, Tray, Add, Lists, :lists	; creates the subsubfolder "plugins"
+		Menu, Tray, Add, Lists, :lists	; creates the subsubfolder "Lists"
+
+		loop, %A_ScriptDir%\inc\*.ahk
+		{
+			if A_LoopFileName <>
+				Menu, Includes, Add, Open \inc\%A_LoopFileName%, menu_open
+		}
+		Menu, Tray, Add, Includes, :Includes	; creates the subsubfolder "Includes"
 		Menu, Tray, Add
 	}
 	Menu, Tray, Add, Preferences, GUI2
@@ -458,9 +467,11 @@ menu_browse_plugins:
 		run, explore "%command_path%", %command_path% , UseErrorLevel
 	GoSub sub_errorlevel		; needed so the msgbox contains the right feedback to the user pertaining the error
 return
-menu_file_open:	; opens a certain 
+menu_open:	; opens a certain file
 	IniRead, text_editor, %ini_file%, programs, text_editor, %A_Space%
 	file_open := SubStr(A_ThisMenuItem,6)
+	if not Instr( file_open, ":" )	; if file_open contains a ":" it'll have a full path so don't add the script path
+		file_open := A_ScriptDir . "\" . file_open
 	; StringTrimLeft, file_open, A_ThisMenuItem, 5	; gets rid of "Open " of the menu item
 	ifexist %text_editor%
 		run, %text_editor% "%file_open%"
@@ -1779,10 +1790,10 @@ GUIContextMenu:
 		Menu, Context, Add, Delete, GUI_Add_delete
 		if use_history = 1
 		{
-			fileread, history, %log_history%
+			if history =
+				fileread, history, %log_history%
 			if command in %history%
 				Menu, Context, Add, Delete from history, GUI_ADD_deletefromhistory	
-			history :=
 		}
 		Menu, Context, Add,
 		;Menu, Context, Add, Add Hotkey for %command%, GUI_Add_hotkey
@@ -1921,11 +1932,17 @@ GUI_ADD_delete:
 	LV_Delete(selected_row)
 return
 GUI_ADD_deletefromhistory:
-	fileread, history, %log_history%
+	if history =
+		fileread, history, %log_history%
 	StringReplace, history, history, %command%`,,,ALL
 	filedelete, %log_history%
 	fileappend, %history%, %log_history%
-	LV_Delete(selected_row)
+	StringReplace, command_name, command_name, (history),,	; get rid of the (history) in the name
+	LV_GetText(ext,selected_row,2) ; first, find the missing column information (the ext in the hidden column 2), the other info was already collected
+	LV_GetText(score,selected_row,4)
+	score -= score_history	; just in case the score was higher than just the score_history
+	LV_Delete(selected_row)	; then, delete the row in question
+	LV_Insert(selected_row, Options, command_name, ext, command, score)	; finally, insert the row to replace the deleted row
 return
 GUI_Add_properties:
 	run, properties "%command%", %command_path%, UseErrorLevel
@@ -2142,6 +2159,11 @@ update_hitlist:	; in a separate subroutine so we can call it when a filter is en
 		SplitPath, command_path , OutFileName, OutDir, OutExtension, OutNameNoExt, OutDrive
 		if OutExtension contains %A_Space%
 			OutExtension3 := SubStr(OutExtension,1,Instr(OutExtension,A_Space))
+		if show_lnk = 0
+		{
+			if ( OutExtension = "lnk" ) OR ( OutExtension3 = "lnk" )
+				FileGetShortcut, %command_path%, command_path, OutDir, OutArgs, OutDescription, OutIcon, OutIconNum, OutRunState
+		}
 		if OutFileName <>		; prevents empty lines
 		{
 			; first filter: if the user doesn't want folders to show up in his result
@@ -2207,14 +2229,15 @@ update_hitlist:	; in a separate subroutine so we can call it when a filter is en
 					; if history is empty, load it from the log
 					if history =
 						FileRead, history, %log_history%
-					if InStr(history,OutFileName) ; command_search in %history% ; contains %command_search%
+					if InStr(history,OutDir . "\" . OutFileName) ; contains %command_search%
 					{
 						OutFileName = %OutFileName% (history)
 						score := score_history
 					}
 				}
 			}
-			LV_Add("", OutFileName, OutExtension, command_path, score)	; Adds the results to the hitlist
+			if not Instr(custom_list,command_path)		; to prevent doubles
+				LV_Add("", OutFileName, OutExtension, command_path, score)	; Adds the results to the hitlist
 			score :=
 		}
 	}	
@@ -2244,13 +2267,16 @@ update_hitlist:	; in a separate subroutine so we can call it when a filter is en
 		GUIControl, hide, hitlist
 		GUIControl, hide, status_text
 	}
-	
-	GUI, Show, AutoSize
-	if use_score = 1
-		LV_ModifyCol(4, "SortDesc")	; sort on score, highest first
-
+	gosub select_hitlist
 	LV_ModifyCol(3,"AutoHdr") 	; resizes column 3
+	if use_score = 1
+	{
+		LV_ModifyCol(4, "Integer")	; integers, so we can sort
+		LV_ModifyCol(4, "SortDesc")	; sort on score, highest first
+		LV_ModifyCol(4, "AutoHdr") 	; resizes column 4
+	}
 
+	GUI, Show, AutoSize
 	GUIControl, 1:+Redraw, Hitlist
 	
 	GoSub update_status_text	; this updates the status_text
@@ -2297,6 +2323,7 @@ select_hitlist:
 return
 sub_command_guess_custom:
 	f_dbgtime(gen,dbg,A_LineNumber,"sub_command_guess_custom","start",2)
+	custom_list :=	; do it here and not after, because we'll need the list to prevent doubles
 	Loop, parse, total_custom, `n
 	{
 		if A_LoopField contains |run	; sends and passwords do not need to be listed in the hitlist
@@ -2325,10 +2352,8 @@ sub_command_guess_custom:
 					hitcounter += 1	; here for the filtered results, this subroutine only gets here if there is no filter applicable
 					GoSub select_hitlist
 					name := name " (custom)"
-					if use_score = 1
-						LV_Add("", name, OutExtension, Path, Score)	; Adds the results to the hitlist
-					else
-						LV_Add("", name, OutExtension, Path)	; Adds the results to the hitlist
+					LV_Add("", name, OutExtension, Path, Score)	; Adds the results to the hitlist	<<<< we need to add to this score for history, no? How will we solve this?
+					custom_list .= path . ","
 					score :=
 				}
 			}
