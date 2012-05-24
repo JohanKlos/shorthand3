@@ -12,14 +12,16 @@ SetWinDelay,2					; for smooth resizing
 DetectHiddenWindows ON
 SetTitleMatchMode 3			; 3: A window's title must exactly match WinTitle to be a match.
 
-script_PID := DllCall("GetCurrentProcessId")	; needed for the updater (to waitclose the pid)
-
 	#include %A_ScriptDir%\inc\debugging.ahk		; for debugging purposes
 	#include %A_ScriptDir%\inc\Autoexec.ahk		; the autoexecute section
+f_dbgtime(gen,dbg,A_LineNumber,"Bootup","start",0) ; sub_time shows in outputdebug how long a certain function/subroutine takes to run
 	#include %A_ScriptDir%\inc\PortableCheck.ahk	; checks where the userfiles should go (portable or user_app)
 	check_portable()	; this checks %A_ScriptDir%\portable.ini sets paths in the app_folder (=portable) or not (= not portable)
 	#include %A_ScriptDir%\inc\globals.ahk			; the global variables
+	#include %A_ScriptDir%\inc\history.ahk			; history functions for executed functions
+	#include %A_ScriptDir%\inc\plugin.ahk			; sorts plugin checking and loading
 
+	Plugins()
 	read_ini()
 	f_dbgoutput(gen,dbg,A_LineNumber,0,"portable = " portable)
 	f_dbgoutput(gen,dbg,A_LineNumber,0,"ini_file = " ini_file)
@@ -27,22 +29,21 @@ script_PID := DllCall("GetCurrentProcessId")	; needed for the updater (to waitcl
 	f_dbgoutput(gen,dbg,A_LineNumber,0,"app_findstr = " app_findstr)
 	f_dbgoutput(gen,dbg,A_LineNumber,0,"logging = " logging)
 	f_dbgoutput(gen,dbg,A_LineNumber,0,"debugging = " debugging)
-
+	
 	GoSub timer_load_custom ; needs to be before menu so menu populates correctly with (eventually, maybe) list of bound hotkeys and custom_files
 	GoSub Menu
 	GoSub Checks
 	GoSub GUI
 	use_everything := 1
 	
-	#include %A_ScriptDir%\inc\plugin.ahk			; sorts plugin checking and loading
-	#include %A_ScriptDir%\inc\history.ahk			; history functions for executed functions
+f_dbgtime(gen,dbg,A_LineNumber,"Bootup","stop",0)
 	
 	#include %A_ScriptDir%\inc\Crypt.ahk			; required for encrypting and decrypting a string
 	#include %A_ScriptDir%\inc\CryptFoos.ahk		; required for encrypting and decrypting a string
 	#include %A_ScriptDir%\inc\CryptConst.ahk		; required for encrypting and decrypting a string
 	#include %A_ScriptDir%\inc\PasswordGUI.ahk	; required for encrypting and decrypting a string
 
-	#include %A_ScriptDir%\inc\MFT.ahk				; alternative to "everything.exe" and "es.exe"	
+	#include %A_ScriptDir%\inc\MFT.ahk				; alternative to "everything.exe" and "es.exe"
 Return
 check_exist_folder(folder)
 {
@@ -802,11 +803,11 @@ GUI2:	; the GUI with the preferences and settings
 	; "Program_Options" (shown at the start)
 	GUI, 2:Add, GroupBox, x%GroupBoxX% y%pref_treey% vp1_1_general w480 r6 section, General
 	
-	GUI, 2:Add, Checkbox, xp+20 yp+20 vautostart gsub_autostart_toggle Checked%autostart%, Start &automatically when Windows starts
-	GUI, 2:Add, Checkbox, xp yp+20 vcheck_for_updates_on_startup gGUI2_set_general Checked%check_for_updates_on_startup%, Check for &updates on startup
-	GUI, 2:Add, Checkbox, xp yp+20 vtraytip gGUI2_set_general Checked%traytip%, Show &TrayTip when performing an action
-	GUI, 2:Add, Checkbox, xp yp+20 vGUI_titlebar gGUI_titlebar Checked%GUI_titlebar%, Show &Titlebar on the search window
-	GUI, 2:Add, Checkbox, xp yp+20 vGUI_easymove gGUI_easymove Checked%GUI_titlebar%, EasyMove the search window by left clicking on the background
+	GUI, 2:Add, Checkbox, xp+20 yp+20 vautostart gsub_autostart_toggle Checked%autostart%, %A_Space%%A_Space%Start &automatically when Windows starts
+	GUI, 2:Add, Checkbox, xp yp+20 vcheck_for_updates_on_startup gGUI2_set_general Checked%check_for_updates_on_startup%, %A_Space%%A_Space%Check for &updates on startup
+	GUI, 2:Add, Checkbox, xp yp+20 vtraytip gGUI2_set_general Checked%traytip%, %A_Space%%A_Space%Show &TrayTip when performing an action
+	GUI, 2:Add, Checkbox, xp yp+20 vGUI_titlebar gGUI_titlebar Checked%GUI_titlebar%, %A_Space%%A_Space%Show &Titlebar on the search window
+	GUI, 2:Add, Checkbox, xp yp+20 vGUI_easymove gGUI_easymove Checked%GUI_titlebar%, %A_Space%%A_Space%EasyMove the search window by left clicking on the background
 	
 	/*
 	to Add:
@@ -843,36 +844,38 @@ GUI2:	; the GUI with the preferences and settings
 	
 	; "Settings"
 	GUI, 2:Add, GroupBox, x%GroupBoxX% y%pref_treey% vp1c1_1 w480 h200 section hidden, Settings
-	GUI, 2:Add, Checkbox, xp+20 yp+20 vGUI_ontop gGUI2_set Checked%GUI_ontop% hidden, Main window is &always on top
-	GUI, 2:Add, Checkbox, xp yp+20 vGUI_fade gGUI2_set Checked%GUI_fade% hidden, &Fade the main window in and out
-	GUI, 2:Add, Checkbox, xp yp+20 vGUI_statusbar gGUI2_set Checked%GUI_statusbar% hidden, &Status bar in the main window
+	GUI, 2:Add, Checkbox, xp+20 yp+20 vGUI_ontop gGUI2_set Checked%GUI_ontop% hidden, %A_Space%%A_Space%Main window is &always on top
+	GUI, 2:Add, Checkbox, xp yp+20 vGUI_fade gGUI2_set Checked%GUI_fade% hidden, %A_Space%%A_Space%&Fade the main window in and out
+	GUI, 2:Add, Checkbox, xp yp+20 vGUI_statusbar gGUI2_set Checked%GUI_statusbar% hidden, %A_Space%%A_Space%&Status bar in the main window
 
-	GUI, 2:Add, Checkbox, xp yp+20 vGUI_autohide gGUI2_set Checked%GUI_autohide% hidden, &Hide the main window when it loses focus
-	GUI, 2:Add, Checkbox, xp yp+20 vGUI_hideafterrun gGUI2_set Checked%GUI_hideafterrun% hidden, H&ide the main window after running a command
-	GUI, 2:Add, Checkbox, xp yp+20 vGUI_emptyafterrun gGUI2_set Checked%GUI_emptyafterrun% hidden, &Clear search text after running a command
+	GUI, 2:Add, Checkbox, xp yp+20 vGUI_autohide gGUI2_set Checked%GUI_autohide% hidden, %A_Space%%A_Space%&Hide the main window when it loses focus
+	GUI, 2:Add, Checkbox, xp yp+20 vGUI_hideafterrun gGUI2_set Checked%GUI_hideafterrun% hidden, %A_Space%%A_Space%H&ide the main window after running a command
+	GUI, 2:Add, Checkbox, xp yp+20 vGUI_emptyafterrun gGUI2_set Checked%GUI_emptyafterrun% hidden, %A_Space%%A_Space%&Clear search text after running a command
 
 	Settings = p1c1_1|GUI_ontop|GUI_autohide|GUI_fade|GUI_statusbar|GUI_hideafterrun|GUI_emptyafterrun
 	
 	
 	; "Results"
 	GUI, 2:Add, GroupBox, x%GroupBoxX% y%pref_treey% vp1c1c1_1 w480 h200 section hidden, Results
-	GUI, 2:Add, Checkbox, xp+20 yp+20 vfilter_folders gGUI2_set Checked%filter_folders% hidden, Do not show folders in results
-	;GUI, 2:Add, Checkbox, xp yp+20 vfilter_systemfiles gGUI2_set Checked%filter_systemfiles% hidden, Do not show system files in results
-	;GUI, 2:Add, Checkbox, xp yp+20 vfilter_hiddenfiles gGUI2_set Checked%filter_hiddenfiles% hidden, Do not show hidden files in results
-	GUI, 2:Add, Checkbox, xp yp+20 vfilter_extensions gGUI2_set Checked%filter_extensions% hidden, Only show certain extensions in the result (separate with `,)
+	GUI, 2:Add, Checkbox, xp+20 yp+20 vfilter_folders gGUI2_set Checked%filter_folders% hidden, %A_Space%%A_Space%Do not show folders in results
+	;GUI, 2:Add, Checkbox, xp yp+20 vfilter_systemfiles gGUI2_set Checked%filter_systemfiles% hidden, %A_Space%%A_Space%Do not show system files in results
+	;GUI, 2:Add, Checkbox, xp yp+20 vfilter_hiddenfiles gGUI2_set Checked%filter_hiddenfiles% hidden, %A_Space%%A_Space%Do not show hidden files in results
+	GUI, 2:Add, Checkbox, xp yp+20 vfilter_extensions gGUI2_set Checked%filter_extensions% hidden, %A_Space%%A_Space%Only show certain extensions in the result (separate with `,)
 	GUI, 2:Add, Edit, xp+20 yp+20 w420 vlist_extensions gGUI2_set_list r3 hidden, %list_extensions%
-	GUI, 2:Add, Checkbox, xp-20 yp+55 vfilter_ignores gGUI2_set Checked%filter_ignores% hidden, Use ignore list for files and folders (separate with `,)
+	GUI, 2:Add, Checkbox, xp-20 yp+55 vfilter_ignores gGUI2_set Checked%filter_ignores% hidden, %A_Space%%A_Space%Use ignore list for files and folders (separate with `,)
 	GUI, 2:Add, Edit, xp+20 yp+20 w420 vlist_ignores gset_list_ignores r3 hidden, %list_ignores%
 	GUI, 2:Add, Text, xp yp+3 vuse_history gGUI2_set Checked%use_history% hidden, use History
 
 	; scoring
 
 	GUI, 2:Add, GroupBox, x%GroupBoxX% ys+210 vp1c1c1_2 w480 h200 section hidden, Scoring
-	GUI, 2:Add, Checkbox, xp+20 yp+20 vuse_score gGUI2_set Checked%use_score% hidden, Use scoring for files and folders
-	GUI, 2:Add, Edit, xp yp+20 vscore_history w40 number right hidden, %score_history%
+	GUI, 2:Add, Checkbox, xs+20 yp+20 vuse_score gGUI2_set Checked%use_score% hidden, %A_Space%%A_Space%Use scoring for files and folders (higher scores will be higher in the results list)
+	GUI, 2:Add, Edit, xs+20 yp+20 vscore_history w40 number right hidden, %score_history%
 	GUI, 2:Add, Text, xp+50 yp+3 vscore_history_text w250 hidden, History
+	GUI, 2:Add, Edit, xs+20 yp+20 vscore_custom w40 number right hidden, %score_custom%
+	GUI, 2:Add, Text, xp+50 yp+3 vscore_custom_text w250 hidden, Custom Files
 	
-	Results = p1c1c1_1|filter_folders|filter_systemfiles|filter_hiddenfiles|filter_extensions|list_extensions|filter_ignores|list_ignores|p1c1c1_2|use_score|score_history|score_history_text 
+	Results = p1c1c1_1|filter_folders|filter_systemfiles|filter_hiddenfiles|filter_extensions|list_extensions|filter_ignores|list_ignores|p1c1c1_2|use_score|score_history|score_history_text|score_custom|score_custom_text 
 	
 	; Custom
 	GUI 2:Add, GroupBox, x%GroupBoxX% y%pref_treey% vp1c1c2_customfiles w480 h175 section hidden, Custom Files
@@ -902,8 +905,8 @@ GUI2:	; the GUI with the preferences and settings
 	GUI 2:Add, Text, xs+20 yp+30 w50 vc_hotkey_text hidden, Hotkey
 	GUI 2:Add, Hotkey, xp+60 yp-3 w315 vc_hotkey hidden uppercase, 
 	GUI 2:Add, Button, xp+325 yp w50 vlv_hotkeys_add_new glv_hotkeys_add_new disabled hidden, Add
-	GUI 2:Add, Checkbox, xs+80 yp+25 w60 vc_hotkey_mod_win hidden, WIN
-	GUI 2:Add, Checkbox, xp+70 yp w60 vc_hotkey_mod_space hidden, SPACE
+	GUI 2:Add, Checkbox, xs+80 yp+25 w60 vc_hotkey_mod_win hidden, %A_Space%%A_Space%WIN
+	GUI 2:Add, Checkbox, xp+70 yp w60 vc_hotkey_mod_space hidden, %A_Space%%A_Space%SPACE
 
 	GUI 2:Add, Text, xs+20 yp+30 w50 vc_path_text hidden, Command
 	GUI 2:Add, Edit, xp+60 yp-3 w315 vc_path gc_update hidden,
@@ -945,7 +948,6 @@ GUI2:	; the GUI with the preferences and settings
 	;GUI, 2:TreeView, pref_tree		; tell the script to use the main treeview
 	
 	Troubleshooting_log = p2|log_parse|log_export|log_delete|logging_text|logging|logging_desc|loglistview
-	
 	
 	GoSub get_treesel		; get current selected tree item
 	
@@ -1788,11 +1790,12 @@ GUIContextMenu:
 		Menu, Context, Add, Open with %file_browser_name%, GUI_def_fbrowse
 		Menu, Context, Add,
 		Menu, Context, Add, Delete, GUI_Add_delete
+
+		if command_name contains (custom)
+			Menu, Context, Add, Delete from custom file, GUI_ADD_deletefromcustom	
 		if use_history = 1
 		{
-			if history =
-				fileread, history, %log_history%
-			if command in %history%
+			if command_name contains (history)
 				Menu, Context, Add, Delete from history, GUI_ADD_deletefromhistory	
 		}
 		Menu, Context, Add,
@@ -1944,6 +1947,38 @@ GUI_ADD_deletefromhistory:
 	LV_Delete(selected_row)	; then, delete the row in question
 	LV_Insert(selected_row, Options, command_name, ext, command, score)	; finally, insert the row to replace the deleted row
 return
+GUI_ADD_deletefromcustom:
+	StringReplace, command_name, command_name, (custom),,	; get rid of the (custom) in the name
+	; 1, see which custom file the line is in (FileRead > contains)
+	Loop, %custom_files%
+	{
+		custom :=	; empty the variable
+		if custom_file_%A_Index% =
+			continue	; ignore empty vars
+		ifexist % custom_file_%A_Index%
+		{
+			FileRead, checkcustom, % custom_file_%A_Index%
+			if checkcustom contains %command_name%|%command_path%
+			{
+				outputdebug % ">>>>>" . custom_file_%A_Index% . " contains " . command_name
+			}
+			else
+				continue
+			; 2, delete the custom file
+			; 3, delete the line in question <<<<<<<<<<
+			; 4, append the new contents
+		}
+	}
+	return
+	/*
+	; or is i
+	LV_GetText(ext,selected_row,2) ; first, find the missing column information (the ext in the hidden column 2), the other info was already collected
+	LV_GetText(score,selected_row,4)
+	score -= score_history	; just in case the score was higher than just the score_history
+	LV_Delete(selected_row)	; then, delete the row in question
+	LV_Insert(selected_row, Options, command_name, ext, command, score)	; finally, insert the row to replace the deleted row
+	*/
+return
 GUI_Add_properties:
 	run, properties "%command%", %command_path%, UseErrorLevel
 return
@@ -2031,8 +2066,7 @@ timer_execute_search:
 	newsearch = 1	; this variable is to keep track of the time spent searching
 	search_time_start := A_TickCount
 	
-	Process , exist , everything.exe	; check if the everything process is running in the background
-	if errorlevel = 0
+	if everythingPID = 0
 	{
 		run, %app_everything%,, hide , everythingPID
 		sleep 500	; sleep 500 so everything.exe has time to start
@@ -2744,7 +2778,10 @@ ExitSub:
 	GoSub GUI_save_pos	; saves the position and dimensions of the GUI
 	FormatTime, TimeString,, yyyy-MM-dd HH:mm:ss
 	f_dbgoutput(gen,dbg,A_LineNumber,0,"Closing " app_name " v" app_version " on " TimeString " " A_ExitReason )
-	if everythingPID <>
-		Process, Close, %everythingPID%
+	if ( A_ExitReason = "Exit" )	; everything does not have to closed on anything but exit
+	{
+		if everythingPID <>
+			Process, Close, %everythingPID%
+	}
 	Process, Close, %PluginLoaderPID%
 	exitapp

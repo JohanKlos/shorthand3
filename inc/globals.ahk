@@ -1,10 +1,12 @@
 ; general object and global variables
+script_PID := DllCall("GetCurrentProcessId")	; needed for the updater (to waitclose the pid)
+
 gen					:= Object()
 gen.app_name		:= app_name
 gen.app_version	:= app_version
-gen.ini_location	:=	A_ScriptDir
-gen.ini_file		:=	gen.ini_location "\portable.ini"
-gen.tempfolder 	:= 	A_ScriptDir "\temp"
+gen.ini_location	:= ini_location
+gen.ini_file		:= gen.ini_location "\portable.ini"
+gen.tempfolder 	:= A_ScriptDir "\temp"
 
 GUI_name			= %app_name% %app_version% %beta%
 GUI2_name			= %app_name% : Preferences
@@ -17,6 +19,12 @@ app_everything	= %app_folder%\Everything.exe	; needs to be resident for es.exe t
 app_findstr		= %app_folder%\findstr.exe		; windows standard tool to search inside files
 app_updater		= %app_folder%\updater.exe		; updater executable
 plugin_loader 	= %A_ScriptDir%\plugin_loader.ahk
+
+if everythingPID =
+{
+	Process , exist , everything.exe	; check if the everything process is running in the background
+	everythingPID := Errorlevel
+}
 
 img_folder			= %A_ScriptDir%\img
 check_exist_folder(img_folder)
@@ -110,7 +118,7 @@ Read_ini:
 	IniRead, use_history, %ini_file%, GUI, use_history, 1					; 1 : keep track of what is opened/run with shorthand, allows scoring and combobox in GUI
 	IniRead, use_score, %ini_file%, GUI, use_score, 0						; 1 : use scoring to change the hitlist
 	IniRead, score_history, %ini_file%, Score, score_history, 100			; files in log_history appear at the top of the hitlist
-	IniRead, score_custom, %ini_file%, Score, score_custom, 75				; "run" files in a custom_file
+	IniRead, score_custom, %ini_file%, Score, score_custom, 150				; "run" files in a custom_file
 
 	IniRead, text_editor_ext, %ini_file%, GUI, text_editor_ext, %A_Space%	; list of extensions to open with the specified text editor
 	if text_editor_ext =
@@ -133,7 +141,7 @@ Read_ini:
 	if list_ignores =
 		list_ignores = prefetch,cache
 
-	IniRead, show_lnk, %ini_file%, GUI, show_lnk, 0							; when 0, the results will show the path to the actual file, instead of the .lnk filename
+	IniRead, show_lnk, %ini_file%, GUI, show_lnk, 1							; when 0, the results will show the path to the actual file, instead of the .lnk filename
 
 	IniRead, restricted_mode, %ini_file%, GUI, restricted_mode, 1			; 1 means it'll only show hits in one of the restricted folders
 	A_TaskbarPinned = %AppData%\Microsoft\Internet Explorer\Quick Launch\User Pinned\TaskBar

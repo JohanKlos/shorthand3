@@ -1,15 +1,13 @@
 /*
-	1. plugin.ahk gets included from the main script
+	1. plugin.ahk is included in the main script
 	2. plugin.ahk looks at the plugin folder and notes which plugins are there and what their modified timestamp is
 	3. plugin.ahk compares the list of plugins and their timestamps to a previous list from the ini file
-	4. 	a)	if the list is the same, assume all the plugins check out, so run the files (using plugin_loader.ahk)
-		b)	if the list is NOT the same, plugin.ahk checks all different plugins with plugin_tester.ahk
+	4. 	>	if the list is the same, assume all the plugins check out, so run the files (using plugin_loader.ahk)
+		>	if the list is NOT the same, plugin.ahk checks all different plugins (with plugin_tester.ahk)
 */
-
-Plugins:
+Plugins()
+{
 	f_dbgtime(gen,dbg,A_LineNumber,"Plugins","start",3)
-	f_dbgoutput(gen,dbg,A_LineNumber,0,"portable = " portable)
-
 	FileDelete %A_ScriptDir%\plugin_list.ahk	; this file will contain the #include lines for plugin_loader, to be appended by this label
 	; first we need to see if there are new or modified scripts
 	; so, 1) check the names of the plugins and timestamps of the plugins
@@ -70,4 +68,4 @@ Plugins:
 	Run, "%plugin_loader%" "%ini_file%", %A_ScriptDir%, Min, PluginLoaderPID
 	f_dbgoutput(gen,dbg,A_LineNumber,3,A_ThisLabel " no new plugins found")
 	f_dbgtime(gen,dbg,A_LineNumber,"Plugins","finish",3)
-return
+}
