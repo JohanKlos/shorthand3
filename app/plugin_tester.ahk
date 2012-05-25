@@ -25,7 +25,7 @@ it not to be loaded anymore (plugins\disabled)
 	RunWait "%plugin%", %A_ScriptDir%,,OutputVarPID
 	; because we use RunWait, if we get to the next line within a second, the plugin is faulty
 	outputdebug %app_name% %app_ver%: %plugin% is faulty `n move to %disabled%
-	ifExist %disabled%\
+	ifExist %disabled%
 		FileMove, %plugin%, %disabled%\%plugin_name%
 exitapp
 
@@ -36,7 +36,7 @@ check:
 	if ErrorLevel = 0	; just a extra test if the plugin "hangs"
 	{
 		outputdebug %app_name% %app_ver%: %plugin% is faulty `n move to %disabled%
-		ifExist %disabled%\
+		ifExist %disabled%
 			FileMove, %plugin%, %disabled%\%plugin_name%
 		exitapp
 	}

@@ -4,8 +4,13 @@ TO DO
 -----------------------------
 	short term
 	-------------------------
-	- add context menu to add custom entries (add hotkey option and everything)
+	- troubleshoot plugin checker
+	- plugin: elevate current process (using getmousepos or something)
+	- get rid of all the unnecessary globals
+	- check UAC problems with starting everything.exe over and over again
+	- add context menu to add custom entries (add hotkey option and everything) > only run files, not sends (as those don't show up in the hitlist)
 	- add context menu to delete custom entries
+	- add context menu to add to ignore list
 	- change search input box to what dropbox has: one box, inside: search icon/revolving thing - text - x to clear
 	- add timestamp to history (so we can prune history entries that are > 30 days old)
 	- use Self Script Updater and make a GUI with URLGet

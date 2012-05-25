@@ -310,14 +310,6 @@ sub_getextandrun:
 	{
 		command_ext_split := Substr(command_ext,1,InStr(command_ext, A_Space))
 		StringReplace, arguments, command_ext, %command_ext_split%,, ALL
-		
-		/*
-		Position := InStr(command_ext, A_Space)
-		StringLeft, command_ext_split, command_ext, %position%
-		
-		StringLeft, command_ext_split3, command_ext, InStr(command_ext, A_Space)
-		*/		
-		outputdebug %command_ext_split%`n%command_ext_split2%`n%command_ext_split3%
 	}
 	else
 		command_ext_split := command_ext
@@ -355,9 +347,9 @@ sub_getextandrun:
 		else if RunAsAdmin = 1
 		{
 			if selected_program <>
-				run, %selected_program% %run_command% %arguments% , %command_path% , UseErrorLevel
+				run, *runAs "%selected_program%" "%run_command%" %arguments% , %command_path% , UseErrorLevel
 			else
-				run, %run_command% %arguments% , %command_path% , UseErrorLevel
+				run, *runAs "%run_command%" %arguments% , %command_path% , UseErrorLevel
 		}
 		else
 		{
@@ -1780,6 +1772,7 @@ GUIContextMenu:
 		Menu, Context, Default, Open
 		Menu, Context, Add, Open with..., command_run_with
 		Menu, Context, Add, Open with arguments, command_run_args
+		Menu, Context, Add, Open as admin, command_run_admin
 
 		if text_editor <>
 			Menu, Context, Add, Edit, GUI_edit
@@ -1788,6 +1781,7 @@ GUIContextMenu:
 		Menu, Context, Add, Open with %text_editor_name%, GUI_def_edit
 		Menu, Context, Add, Open with %graphics_editor_name%, GUI_def_gfx
 		Menu, Context, Add, Open with %file_browser_name%, GUI_def_fbrowse
+
 		Menu, Context, Add,
 		Menu, Context, Add, Delete, GUI_Add_delete
 
@@ -1945,10 +1939,12 @@ GUI_ADD_deletefromhistory:
 	LV_GetText(score,selected_row,4)
 	score -= score_history	; just in case the score was higher than just the score_history
 	LV_Delete(selected_row)	; then, delete the row in question
-	LV_Insert(selected_row, Options, command_name, ext, command, score)	; finally, insert the row to replace the deleted row
+	LV_Insert(selected_row, "", command_name, ext, command, score)	; finally, insert the row to replace the deleted row
 return
 GUI_ADD_deletefromcustom:
 	StringReplace, command_name, command_name, (custom),,	; get rid of the (custom) in the name
+	command_name := trim(command_name)	; trim any trailing spaces
+	searchfor := command_name . "|" . command_path		; build the searchfor variable, making it unique
 	; 1, see which custom file the line is in (FileRead > contains)
 	Loop, %custom_files%
 	{
@@ -1957,27 +1953,30 @@ GUI_ADD_deletefromcustom:
 			continue	; ignore empty vars
 		ifexist % custom_file_%A_Index%
 		{
-			FileRead, checkcustom, % custom_file_%A_Index%
-			if checkcustom contains %command_name%|%command_path%
+			file := custom_file_%A_Index%
+			FileRead, checkcustom, % file
+			if checkcustom contains %searchfor%
 			{
-				outputdebug % ">>>>>" . custom_file_%A_Index% . " contains " . command_name
+				loop, parse, checkcustom, `n
+				{
+					if A_LoopField not contains %searchfor%
+						searchcontents .= A_LoopField "`n"
+					; 2, omit the line in question
+				}
+				; 3, delete the custom file
+				FileDelete, % file
+				; 4, append the new contents
+				FileAppend, % searchcontents, % file
+				searchcontents :=	; 
+				break	; end the loop
 			}
-			else
-				continue
-			; 2, delete the custom file
-			; 3, delete the line in question <<<<<<<<<<
-			; 4, append the new contents
 		}
 	}
-	return
-	/*
-	; or is i
 	LV_GetText(ext,selected_row,2) ; first, find the missing column information (the ext in the hidden column 2), the other info was already collected
 	LV_GetText(score,selected_row,4)
-	score -= score_history	; just in case the score was higher than just the score_history
+	score -= score_custom	; just in case the score was higher than just the score_history
 	LV_Delete(selected_row)	; then, delete the row in question
-	LV_Insert(selected_row, Options, command_name, ext, command, score)	; finally, insert the row to replace the deleted row
-	*/
+	LV_Insert(selected_row, "", command_name, ext, command, score)	; finally, insert the row to replace the deleted row
 return
 GUI_Add_properties:
 	run, properties "%command%", %command_path%, UseErrorLevel
@@ -2446,6 +2445,11 @@ getprogram(command_ext)
 command_run_args:
 	InputBox, arguments, %app_name%: Run with arguments, Type the arguments you want to run the program with, , 400, 130, , , , , 
 	gosub command_run
+return
+command_run_admin:
+	RunAsAdmin = 1
+	gosub command_run
+	RunAsAdmin = 0
 return
 command_run_with:
 	command_run_with = 1

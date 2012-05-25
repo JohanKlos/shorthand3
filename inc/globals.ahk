@@ -6,7 +6,9 @@ gen.app_name		:= app_name
 gen.app_version	:= app_version
 gen.ini_location	:= ini_location
 gen.ini_file		:= gen.ini_location "\portable.ini"
-gen.tempfolder 	:= A_ScriptDir "\temp"
+gen.tempfolder 	:= gen.ini_location "\temp"
+IniWrite, %ini_location%\temp, %ini_file%, General, tempfolder
+
 
 GUI_name			= %app_name% %app_version% %beta%
 GUI2_name			= %app_name% : Preferences

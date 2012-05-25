@@ -15,7 +15,7 @@ ahk_pid = %6%
 #NoEnv
 
 app_name = Updater
-app_version = 0.05
+app_version = 0.04
 
 	if ahk_pid =
 	{
@@ -30,11 +30,6 @@ app_version = 0.05
 	ini_file = %temp_folder%\update.txt
 
 	app_zip = %A_ScriptDir%\7za.exe
-	ifNotExist %app_zip%
-	{
-		URLDownloadToFile, http://www.famklos.nl/files/7za.exe, %file%
-		URLDownloadToFile, http://www.famklos.nl/files/7za.txt, %file%.txt
-	}
 
 	ifnotexist %temp_folder%
 		FileCreateDir %temp_folder%

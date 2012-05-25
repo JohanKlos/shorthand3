@@ -8,7 +8,7 @@ DetectHiddenWindows ON
 SetTitleMatchMode 3			; 3: A window's title must exactly match WinTitle to be a match.
 
 sh_windowcloser:
-	outputdebug Shorthand plugin loaded: sh_windowcloser version 0.01
+	outputdebug Shorthand plugin loaded: sh_windowcloser version 0.02
 	gosub checkini
 	Settimer checkini, 60000 	; checks the ini for new windows every minute
 	Settimer checkwindow 		; looks for a certain window to open and then do a certain command

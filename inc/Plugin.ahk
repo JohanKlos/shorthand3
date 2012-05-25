@@ -7,8 +7,9 @@
 */
 Plugins()
 {
+	global ; local plugin_folder, ini_file, gen, dbg, PluginLoaderPID
 	f_dbgtime(gen,dbg,A_LineNumber,"Plugins","start",3)
-	FileDelete %A_ScriptDir%\plugin_list.ahk	; this file will contain the #include lines for plugin_loader, to be appended by this label
+	FileDelete %A_ScriptDir%\temp\plugin_list.tmp	; this file will contain the #include lines for plugin_loader, to be appended by this label
 	; first we need to see if there are new or modified scripts
 	; so, 1) check the names of the plugins and timestamps of the plugins
 	Loop, %plugin_folder%\*.ahk
@@ -62,10 +63,11 @@ Plugins()
 		}
 		IniWrite, %plugins_active_new%, %ini_file%, Plugins, List
 	}
-	FileAppend, %plugins_IncList%, %A_ScriptDir%\plugin_list.ahk	; prepare the includelist for plugin_loader.ahk
+	FileAppend, %plugins_IncList%, %A_ScriptDir%\temp\plugin_list.tmp	; prepare the includelist for plugin_loader.ahk
 	IniWrite, %plugins_LoadList%, %ini_file%, Plugins, LoadList
 	; the plugins have either not been changed since last check, or have been rechecked
 	Run, "%plugin_loader%" "%ini_file%", %A_ScriptDir%, Min, PluginLoaderPID
 	f_dbgoutput(gen,dbg,A_LineNumber,3,A_ThisLabel " no new plugins found")
 	f_dbgtime(gen,dbg,A_LineNumber,"Plugins","finish",3)
+	return
 }
