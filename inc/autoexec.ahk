@@ -35,11 +35,3 @@ if first_time_setup = 1
 	
 if beta = ""
 	IniWrite, %app_version%, %ini_file%, General, version
-	
-Hotkey, IfWinActive, ahk_pid %script_PID%
-	Hotkey, !E, set_advanced
-	Hotkey, !F, toggle_set_filter_folders
-	Hotkey, !X, toggle_set_filter_extensions
-	Hotkey, !I, toggle_set_filter_ignores
-	Hotkey, !R, toggle_set_restricted
-Hotkey, IfWinActive

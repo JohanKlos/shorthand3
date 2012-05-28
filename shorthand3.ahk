@@ -1,11 +1,12 @@
 #Persistent
+#NoEnv  						; Performance setting: http://www.autohotkey.com/docs/misc/Performance.htm
+SetBatchLines -1 				; Performance setting: maximum speed for loops
+ListLines Off					; Performance setting
 ; #Warn
 #SingleInstance Force
-#NoEnv  						; Recommended for performance and compatibility with future AutoHotkey releases.
 #MaxThreadsPerHotkey 1		; enable correction on accidental press of several hotkeys (only last pressed hotkey will fire)
 OnExit, ExitSub				; when script exits, go to subroutine ExitSub
 Process, Priority,, High 	; increase performance for Hotkeys, Clicks, or Sends while the CPU is under heavy load
-SetBatchLines -1 				; maximum speed for loops
 SetWorkingDir %A_ScriptDir%	; unconditionally use its own folder as its working directory
 SetWinDelay,2					; for smooth resizing
 ; SendMode InputThenPlay 		; commented because it made the send not work all the time...
@@ -34,6 +35,15 @@ f_dbgtime(gen,dbg,A_LineNumber,"Bootup","start",0) ; sub_time shows in outputdeb
 	GoSub Menu
 	GoSub Checks
 	GoSub GUI
+	Hotkey, IfWinActive, ahk_pid %script_PID%
+		Hotkey, !E, set_advanced
+		Hotkey, !F, toggle_set_filter_folders
+		Hotkey, !X, toggle_set_filter_extensions
+		Hotkey, !I, toggle_set_filter_ignores
+		Hotkey, !R, toggle_set_restricted
+		Hotkey, Delete, GUI_Add_deletebtn
+	Hotkey, IfWinActive
+
 	use_everything := 1
 	
 f_dbgtime(gen,dbg,A_LineNumber,"Bootup","stop",0)
@@ -416,7 +426,6 @@ menu:
 	{
 		Menu, Lists, Add, ListHotkeys, list_hotkeys
 		Menu, Lists, Add, KeyHistory, list_KeyHistory
-		Menu, Lists, Add, ListLines, list_lines
 		Menu, Lists, Add, ListVars, list_vars
 		Menu, Tray, Add, Lists, :lists	; creates the subsubfolder "Lists"
 
@@ -442,9 +451,6 @@ list_hotkeys:
 return
 list_KeyHistory:
 	KeyHistory
-return
-list_lines:
-	ListLines
 return
 list_vars:
 	ListVars
@@ -1786,15 +1792,16 @@ GUIContextMenu:
 		Menu, Context, Add, Delete, GUI_Add_delete
 
 		if command_name contains (custom)
-			Menu, Context, Add, Delete from custom file, GUI_ADD_deletefromcustom	
-		if use_history = 1
-		{
-			if command_name contains (history)
-				Menu, Context, Add, Delete from history, GUI_ADD_deletefromhistory	
-		}
+			Menu, Context, Add, Delete from custom file, GUI_ADD_deletefromcustom
+		if command_name contains (history)
+			Menu, Context, Add, Delete from history, GUI_ADD_deletefromhistory	
+		if command_name contains (ignored)
+			Menu, Context, Add, Delete from Ignore List, GUI_ADD_deletefromignorelist
+			
 		Menu, Context, Add,
 		;Menu, Context, Add, Add Hotkey for %command%, GUI_Add_hotkey
 		Menu, Context, Add, CopyPath, GUI_Add_copypath
+		Menu, Context, Add, Add to ignore list, GUI_ADD_ignore
 		Menu, Context, Add,
 		Menu, Context, Add, Properties, GUI_Add_properties
 		Menu, Context, Add, Browse folder, GUI_Add_browse
@@ -1924,6 +1931,12 @@ return
 GUI_Add_copypath:
 	clipboard = %command%
 return
+GUI_Add_deletebtn:
+	ifnotexist %command%
+		return
+	MsgBox, 4,, Are you sure you want to the following file?`n%command%
+	IfMsgBox No
+		Return	
 GUI_ADD_delete:
 	FileRecycle, %command%
 	LV_Delete(selected_row)
@@ -1968,7 +1981,7 @@ GUI_ADD_deletefromcustom:
 				; 4, append the new contents
 				FileAppend, % searchcontents, % file
 				searchcontents :=	; 
-				break	; end the loop
+				; break	; end the loop <<< may be that there are multiple lines, so sdon't break the loop
 			}
 		}
 	}
@@ -1977,6 +1990,16 @@ GUI_ADD_deletefromcustom:
 	score -= score_custom	; just in case the score was higher than just the score_history
 	LV_Delete(selected_row)	; then, delete the row in question
 	LV_Insert(selected_row, "", command_name, ext, command, score)	; finally, insert the row to replace the deleted row
+return
+GUI_ADD_ignore:
+	list_ignores .= "," . command_path . "\" . command_name
+	IniWrite, %list_ignores%, %ini_file%, GUI, list_ignores
+return
+GUI_ADD_deletefromignorelist:
+	StringReplace, command_name, command_name, %A_Space%(ignored),,
+	StringReplace, list_ignores, list_ignores, `,%command_path%\%command_name%,,ALL
+	IniWrite, %list_ignores%, %ini_file%, GUI, list_ignores
+	msgbox %command_path%\%command_name%`n%list_ignores%
 return
 GUI_Add_properties:
 	run, properties "%command%", %command_path%, UseErrorLevel
@@ -2237,16 +2260,21 @@ update_hitlist:	; in a separate subroutine so we can call it when a filter is en
 			; third filter: any line with an ignored string in it needs to be skipped
 			if filter_ignores = 1
 			{
-				if command_path contains %list_ignores% ; whenever Var contains one of the list items as a substring
+				if A_LoopField contains %list_ignores% ; whenever Var contains one of the list items as a substring
 				{
 					missignores += 1
 					f_dbgoutput(gen,dbg,A_LineNumber,4,"update_hitlist: filter ignores is on, a string of the list_ignores was found: " list_ignores )
 					continue
 				}
 			}
+			else
+			{
+				if A_LoopField contains %list_ignores% ; whenever Var contains one of the list items as a substring
+					OutFileName .= " (ignored)"
+			}
 			if restricted_mode = 1
 			{
-				if command_path not contains %restricted_list% ; whenever Var contains one of the list items as a substring
+				if A_LoopField not contains %restricted_list% ; whenever Var contains one of the list items as a substring
 				{
 					missrestricted += 1
 					f_dbgoutput(gen,dbg,A_LineNumber,4,"update_hitlist: restricted mode is on, a string was found outside the restricted folders: " restricted_list )
@@ -2458,6 +2486,7 @@ command_run_with:
 	command_run_with = 0
 return
 command_run:
+	gui, submit, nohide
 	if command_search = "" ; needs to be here in case user presses enter on an empty search command
 	{
 		f_dbgtime(gen,dbg,A_LineNumber,"timer_execute_search","stop",3)
@@ -2586,7 +2615,7 @@ feedback:
 	Run, mailto:maestr0@gmx.net?subject=%app_name% %app_version% feedback
 return
 about:
-	msgbox , , %app_name% %app_version%, %app_name% is a program to make finding and running files easier.`n`nIt is similar to programs like FindAndRunRobot and Launchy.`n`nYou can also bind hotkeys to certain files, folders and actions.`n`nAHK version: %A_AhkVersion%
+	msgbox , , %app_name% %app_version%, %text_about%
 return
 first_time_gui:
 	GUI, 3:Add, Text, section, Select your preferences.`nThese preferences can later be changed.

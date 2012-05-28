@@ -4,13 +4,14 @@ TO DO
 -----------------------------
 	short term
 	-------------------------
+	- create language files
+	- create About GUI
 	- troubleshoot plugin checker
-	- plugin: elevate current process (using getmousepos or something)
-	- get rid of all the unnecessary globals
-	- check UAC problems with starting everything.exe over and over again
-	- add context menu to add custom entries (add hotkey option and everything) > only run files, not sends (as those don't show up in the hitlist)
-	- add context menu to delete custom entries
+	- add context menu option to add custom entries (add hotkey option and everything) > only run files, not sends (as those don't show up in the hitlist)
 	- add context menu to add to ignore list
+	- add context menu to remove from ignore list
+	- get rid of all the unnecessary globals
+	- add icons to context menu? (key for admin, icon for linked file, bin for delete, etc)
 	- change search input box to what dropbox has: one box, inside: search icon/revolving thing - text - x to clear
 	- add timestamp to history (so we can prune history entries that are > 30 days old)
 	- use Self Script Updater and make a GUI with URLGet

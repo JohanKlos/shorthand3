@@ -86,6 +86,8 @@ info_filter_folders = If checked`, the folders will not show up in the results.
 info_filter_extensions = If checked`, only listed extensions will show up in the results. If folders are not filtered out, they will still show up.
 info_filter_ignores = Any file or folder which has one of the listed strings`, will not show up in the results.
 
+text_about = %app_name% is a program to make finding and running files easier.`n`nIt is similar to programs like FindAndRunRobot and Launchy.`n`n%App_name% uses Everything.exe / ES.exe (http://www.voidtools.com) for file searching and Findstr.exe (http://technet.microsoft.com/en-us/library/bb490907.aspx) for searching in files.`n`nYou can also bind hotkeys to certain files, folders and actions.`n`nAHK version: %A_AhkVersion%
+
 read_ini()
 {
 	global
