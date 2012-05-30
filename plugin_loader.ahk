@@ -24,5 +24,5 @@ Loop, Parse, Plugins, |
 	Gosub %A_LoopField%
 }
 #include *i %A_ScriptDir%\temp\plugin_list.tmp
-; FileDelete %A_ScriptDir%\temp\plugin_list.tmp
+FileDelete %A_ScriptDir%\temp\plugin_list.tmp
 return

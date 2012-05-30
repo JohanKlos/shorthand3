@@ -4,8 +4,10 @@ TO DO
 -----------------------------
 	short term
 	-------------------------
+	- del only tries to delete if a row is selected
 	- create language files
 	- create About GUI
+	- add "action" in GUI (instead of contextmenu) : see demo of nDroid: http://www.codenite.com/demo.html
 	- troubleshoot plugin checker
 	- add context menu option to add custom entries (add hotkey option and everything) > only run files, not sends (as those don't show up in the hitlist)
 	- add context menu to add to ignore list

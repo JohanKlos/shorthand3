@@ -1932,6 +1932,12 @@ GUI_Add_copypath:
 	clipboard = %command%
 return
 GUI_Add_deletebtn:
+	GuiControlGet, Focused, FocusV	; determine if the hitlist has focus
+	if Focused <> hitlist
+	{
+		Send {del}
+		return
+	}
 	ifnotexist %command%
 		return
 	MsgBox, 4,, Are you sure you want to the following file?`n%command%
