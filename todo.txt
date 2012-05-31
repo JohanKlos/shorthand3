@@ -4,7 +4,6 @@ TO DO
 -----------------------------
 	short term
 	-------------------------
-	- del only tries to delete if a row is selected
 	- create language files
 	- create About GUI
 	- add "action" in GUI (instead of contextmenu) : see demo of nDroid: http://www.codenite.com/demo.html
@@ -26,7 +25,6 @@ TO DO
 	- history is not working after you refine a search (search and then add letters to the search term)
 	- add "stick to top" and "stick to bottom"
 	- add "transparency" with slider, maybe with mouseover to 0 and off to like 120?
-	- add reference to "www.voidtools.com" to about
 	- "defrag" won't find anything, but "*defrag" will.... maybe use *%command_search% ?
 	- history hits do not always show up after switching extensions on when a result is showing
 	- add resizing
@@ -40,8 +38,6 @@ TO DO
 	- add "run with" < problem with RunAsUser
 	- transparent when not active
 	- do a search trim instead of a new search when the user types instead of backspaces
-	- allow for interactive debugging though DBGP
-	- fix history: why did it save "pidginportable." ?
 	- how does AHK handle double subs in includes? require A_ScriptName in the subs?
 	- check for missing files, offer to download and unzip, else exitapp
 	- how to execute starting files in an included file
@@ -69,11 +65,8 @@ TO DO
 	- refine preferences menu
 	- context for the shorthand icon in the main GUI
 	- add scoring (a la FindAndRunRobot : http://www.donationcoder.com/Software/Mouser/findrun/index.html)
-	- add history
 	- add dragging of files out of the hitlist to copy
-	- add about
 	- allow resizing of the main GUI
-	- update status line (information about the selected file if the hitlist has focus)
 	- allow to select more than one hit (to delete or copy or whatever), NOTE: requires statusbar update
 	- optimise search so it refines old search results instead of searching anew for every character typed
 	- add "start with windows" option (autostart)
@@ -86,6 +79,7 @@ TO DO
 	
 	long term
 	-------------------------
+	- allow for interactive debugging though DBGP
 	- filter system/hidden files < FileGetAttrib, Attributes, C:\My File.txt does not seem to see hiberfil.sys as S or even H... problem there
 	- allow custom_files to be edited inside the GUI_preferences
 	- optimize parse_custom by using an array instead of a parsing loop?
@@ -98,45 +92,3 @@ TO DO
 	- Use FileOpen() instead of FileRead?
 	- add log file to preferences (parse the log and show it in a separate treeview, a la Spent)
 	- add a check for the size of the log file
-
-
------------------------------
-What's new
------------------------------
-@v3.00.001 - _____, 2012
-	- add automatically start with windows (basically a shortcut in the startup routine)
-	- keep a log file with log entries (in addition to the outputdebugs, I guess)
-	- added a help section to the preferences GUI, on mouseover show helptext in that control
-[Feature] add the run lines of the custom_files to the search routine, taking care to circumvent the filter
-[Feature] timer that checks for mutations in the custom_files, so if a hotkey or program is changed, it is loaded
-[MinorFeature] empty GUI after command 
-[MinorFeature] autohide GUI on loss of focus
-[MinorFeature] autohide GUI after command
-[MinorFeature] default hotkeys to the script for showing the GUI and preferences via the custom_files (later changeable through gui_preferences)
-[MinorFeature] GUI fade in/out
-[Feature] files for hotkeys and custom shorthands (short names for programs/actions) (allow for commenting lines, starting with ; )
-[Feature] hotkeys functionality
-[Feature] save position and dimensions of the GUI on exit of the script
-[MinorFeature] status line (search time)
-[Feature] simple/advanced search method
-[Feature] filtering of search results (filter folders, extensions)
-[MinorFeature] up/down to the GUI so with up and down keys the user can switch between editboxes and the results
-[MinorFeature] changed name to Shorthand3 (Shorthand versions 1 and 2 are internal versions)
-[MinorFeature] split from script "Everything Findstr": http://www.autohotkey.com/forum/viewtopic.php?t=14164&postdays=0&postorder=asc&start=30
-[Feature] portability (ini_file in same folder and temp files in a subfolder)
-[MinorFeature] function sub_time to allow for debugging of efficiency of functions and subroutines
-[BugFix] changed FileDelete to FileRecycle to delete to Recycle Bin, if possible
-[MinorFeature] logging:
-		logging : 0	 	= no logging
-		logging : 1		= normal logging (settings)
-		logging : 2		= extended logging (each function, start and stop, except timers)
-		logging : 3 	= detailed logging (also steps inside each function)
-		logging : 4 	= more extended logging (also steps inside each function)
-		logging : 5 	= timer logging
-
-@v0.00.004 - Jan 05, 2011
-source:	http://www.autohotkey.com/forum/viewtopic.php?t=14164&postdays=0&postorder=asc&start=30
-[Feature] made the app folder into a var so changing it is easier 
-[Feature] pressing enter after typing will run/open the top line 
-[MinorFeature] changed the icon so the script will be easier to find in the systray 
-[Feature] changed the columns in the listview (now name, ext, path)

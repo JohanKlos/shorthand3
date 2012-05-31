@@ -1945,7 +1945,10 @@ GUI_Add_deletebtn:
 		Return	
 GUI_ADD_delete:
 	FileRecycle, %command%
-	LV_Delete(selected_row)
+	selected := LV_GetNext(1) ; will get the selected row
+	if selected = 0
+		selected = 1
+	LV_Delete(selected)
 return
 GUI_ADD_deletefromhistory:
 	if history =
