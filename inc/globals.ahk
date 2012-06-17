@@ -9,7 +9,6 @@ gen.ini_file		:= gen.ini_location "\portable.ini"
 gen.tempfolder 	:= gen.ini_location "\temp"
 IniWrite, %ini_location%\temp, %ini_file%, General, tempfolder
 
-
 GUI_name			= %app_name% %app_version% %beta%
 GUI2_name			= %app_name% : Preferences
 
@@ -32,6 +31,9 @@ img_folder			= %A_ScriptDir%\img
 check_exist_folder(img_folder)
 ; icon_shorthand	= %img_folder%\icon_shorthand.ico	; moved to as high in the script as possible, to prevent flickering
 icon_settings		= %img_folder%\icon_shorthand_settings.ico
+icon_formula		= %img_folder%\icon_shorthand_formula.ico
+icon_search		= %img_folder%\icon_shorthand_search.ico
+icon_send			= %img_folder%\icon_shorthand_send.ico
 
 log_folder			= %A_ScriptDir%\log
 check_exist_folder(log_folder)
@@ -42,51 +44,6 @@ log_history		= %log_folder%\history_%A_UserName%.log
 result_filename 	= %tempfolder%\output_everything.txt
 result_filename2	= %tempfolder%\output_findstr.txt
 update_file		= %tempfolder%\update.txt
-
-error_1155 		= No application is associated with the specified file for this operation. 
-error_15 			= The system cannot find the drive specified. 
-error_2 			= The system cannot find the file specified. 
-error_21 			= The device is not ready. 
-error_25 			= Windows cannot find the network path.`nVerify that the network path is correct and the destination computer is not busy or turned off.`nIf Windows still cannot find the network path, contact your network administrator.
-error_3 			= The system cannot find the path specified. 
-error_4 			= The system cannot open the file. 
-error_5 			= Access is denied.
-
-logging_0		 	= no logging
-logging_1		 	= normal logging (settings)
-logging_2		 	= extended logging (each function, start and stop, except timers)
-logging_3 			= extended logging (also steps inside each function)
-logging_4 			= extended logging (also steps inside each function)
-logging_5 			= timer logging
-
-info_target_icon = Click this icon for some quick settings.
-info_set_advanced = (Alt-E) Click this to toggle between simple and advanced interface.
-info_command_search = (Alt-Space) Type your search entry here`, the list below will be populated with the hits.
-info_preferences_icon = Preferences and settings for %app_name%.
-
-info_statusbar = Help information about options will appear here when you mouse-over each option.
-info_autostart = If checked`, %app_name% will put a shortcut in your Start menu startup folder.
-info_check_for_updates_on_startup = If checked`, %app_name% will check online for updates`, every time %app_name% is started.
-info_check_update_manual = This will immediately check online for updates for %app_name%.
-info_traytip = This will show a tray tip (near your clock in your taskbar) with the started program.
-info_GUI_titlebar = This will show or hide the Titlebar on the main search window.
-info_GUI_easymove = This will allow to move the main search window by left clicking and dragging.
-info_logging = Meant for debugging purposes. This changes the messages that show up in a debugger (like Sysinternals' dbgview.exe).
-info_browser = This program will be used to open certain files opened through %app_name%.
-info_text_editor = This program will be used to open certain files opened through %app_name%.
-info_graphics_editor = This program will be used to open certain files opened through %app_name%.
-info_file_browser = This program will be used to open certain files opened through %app_name%.	
-info_GUI_ontop = The main %app_name% window will stay on top of all other windows.
-info_GUI_fade = The main %app_name% window will fade in and out of sight. Note: takes slightly longer to show and hide the main window.
-info_GUI_statusbar = If checked`, Adds a statusbar underneath the results in the main %app_name% window.
-info_GUI_autohide = If checked`, the main %app_name% window will hide as soon as it loses focus.
-info_GUI_hideafterrun = If checked`, the main %app_name% window will hide after a command is run.
-info_GUI_emptyafterrun = If checked`, the search text in the main %app_name% window will be cleared after a command is run.
-info_filter_folders = If checked`, the folders will not show up in the results.
-info_filter_extensions = If checked`, only listed extensions will show up in the results. If folders are not filtered out, they will still show up.
-info_filter_ignores = Any file or folder which has one of the listed strings`, will not show up in the results.
-
-text_about = %app_name% is a program to make finding and running files easier.`n`nIt is similar to programs like FindAndRunRobot and Launchy.`n`n%App_name% uses Everything.exe / ES.exe (http://www.voidtools.com) for file searching and Findstr.exe (http://technet.microsoft.com/en-us/library/bb490907.aspx) for searching in files.`n`nYou can also bind hotkeys to certain files, folders and actions.`n`nAHK version: %A_AhkVersion%
 
 read_ini()
 {

@@ -12,6 +12,8 @@ SetWinDelay,2					; for smooth resizing
 ; SendMode InputThenPlay 		; commented because it made the send not work all the time...
 DetectHiddenWindows ON
 SetTitleMatchMode 3			; 3: A window's title must exactly match WinTitle to be a match.
+FileGetTime, app_modtime, %A_ScriptFullPath%
+FormatTime, app_modtime, %app_modtime%, yyyy-MMMM-dd HH:mm:ss
 
 	#include %A_ScriptDir%\inc\debugging.ahk		; for debugging purposes
 	#include %A_ScriptDir%\inc\Autoexec.ahk		; the autoexecute section
@@ -19,8 +21,10 @@ f_dbgtime(gen,dbg,A_LineNumber,"Bootup","start",0) ; sub_time shows in outputdeb
 	#include %A_ScriptDir%\inc\PortableCheck.ahk	; checks where the userfiles should go (portable or user_app)
 	check_portable()	; this checks %A_ScriptDir%\portable.ini sets paths in the app_folder (=portable) or not (= not portable)
 	#include %A_ScriptDir%\inc\globals.ahk			; the global variables
+	#include %A_ScriptDir%\inc\lang.ahk			; language variables
 	#include %A_ScriptDir%\inc\history.ahk			; history functions for executed functions
 	#include %A_ScriptDir%\inc\plugin.ahk			; sorts plugin checking and loading
+	#include %A_ScriptDir%\inc\Calc.ahk			; takes care of the calculator function (enter "= " in the search window)
 
 	Plugins()
 	read_ini()
@@ -337,10 +341,12 @@ sub_getextandrun:
 				TrayTip, Hotkey pressed and Command executing, %pressed_hotkey% pressed`nStarting "%run_command%"`nin "%command_path%",%traytime%
 			else
 			{
+				tray_path = 1
 				if selected_program =
-					TrayTip, Command executed, Starting %run_command% %arguments%`nin %command_path%,%traytime%
+					TrayTip, Command executed, % "Starting " ((selected_program = "") ? selected_program : "" ) . run_command . arguments . ( ( command_path <> "" ) ? ((tray_path = 1 ) ? "`nin " . command_path : "") : "" ) , %traytime%
 				else
 					TrayTip, Command executed, Starting %selected_program% %run_command% %arguments%`nin %command_path%,%traytime%
+					; TrayTip, Command executed, Starting %run_command% %arguments%`nin %command_path%,%traytime%
 			}
 		}
 	}
@@ -374,6 +380,7 @@ sub_getextandrun:
 		path_complete = %command_path%\%run_command%
 		fill_history(path_complete)
 	}
+	selected_program := 
 	gosub sub_clear
 return
 menu:
@@ -385,6 +392,7 @@ menu:
 	Menu, Tray, Add, %app_name% %app_version% %beta%, GUI
 	Menu, Tray, Icon, %app_name% %app_version% %beta%, %icon_shorthand%
 	Menu, Tray, default, %app_name% %app_version% %beta%
+	Menu, Tray, Click, 1	; click once to show
 	Menu, Tray, Add, Check for updates, check_update_manual
 	Menu, Tray, Add
 	
@@ -568,48 +576,51 @@ GUI:
 	; row one of the main GUI (the simple portion, the command_search editbox, toggle simple/advanced and the settings)
 	GUIControl, focus, command_search
 	if advanced_border = 1
-		GUI Add, Button, ys+1 h20 w72 vset_advanced gset_advanced border center, advanc&ed
+		GUI Add, Button, ys+1 h20 w72 vset_advanced gset_advanced border center, %gui_advanced%
 	else
-		GUI Add, button, ys+1 h21 w72 vset_advanced gset_advanced center, advanc&ed
+		GUI Add, button, ys+1 h21 w72 vset_advanced gset_advanced center, %gui_advanced%
 
 	GUI Add, Picture, ys+3 h16 w16 vpreferences_icon gGUI2 Icon1, %icon_settings%	; this control to be moved through GUISize
-	GUI Add, Button, ys-1 gcommand_run default hidden, OK
+	GUI Add, Button, ys-1 gcommand_run default hidden,
 
 	; row two of the main GUI (the advanced portion, like the search_inside editbox)
 	; needs to start shown, to get the coordinates for advanced/simple toggle
-	GUI Add, Text, x30 h16 w60 vadvanced section, &Containing
+	GUI Add, Text, x30 h16 w60 vadvanced section, %gui_containing%
 	GUI Add, Edit, ys-3 w%gui_w_edit2% vsearch_inside gsearch section r1, %parameter% 	; the y of this control functions as the mark of the Y for the advanced section
 	GUIControlGet, search_inside, Pos	; to determine what Y the advanced controls are at, needed for moving the controls
 	
 	; filter_extensions lets the user decide to filter the results based on extension
 	GUI Add, Checkbox, x9 w16 h16 vfilter_extensions gset_filter_extensions Checked%filter_extensions% %advanced_status% section, 
-	GUI Add, Text, x30 ys w60 r1 vfilter_extensions_text gset_filter_extensions_text %advanced_status%, E&xtensions 	; this control to be resized through GUISize
+	GUI Add, Text, x30 ys w60 r1 vfilter_extensions_text gset_filter_extensions_text %advanced_status%, %gui_extensions% 	; this control to be resized through GUISize
 	GUI Add, Edit, ys-4 w%gui_w_edit2% r1 vlist_extensions gset_extensions right %advanced_status%, %list_extensions% 	; this control to be resized through GUISize
 
 	; filter_folders lets the user decide to not show the folders
 	GUI Add, Checkbox, xs w16 h16 vfilter_folders gset_filter_folders Checked%filter_folders% %advanced_status% section, 
-	GUI Add, Text, x30 ys w60 r1 vfilter_folders_text gset_filter_folders_text %advanced_status%, Hide &Folders
+	GUI Add, Text, x30 ys w60 r1 vfilter_folders_text gset_filter_folders_text %advanced_status%, %gui_hidefolders%
 	
 	; filter_ignores lets the user decide to not show files with certain words
 	GUI Add, Checkbox, ys w16 h16 vfilter_ignores gset_filter_ignores Checked%filter_ignores% %advanced_status% , 
-	GUI Add, Text, ys w80 r1 vfilter_ignores_text gset_filter_ignores_text %advanced_status%, &Ignore list
+	GUI Add, Text, ys w80 r1 vfilter_ignores_text gset_filter_ignores_text %advanced_status%, %gui_ignorelist%
 
 	; restricted_mode lets the user only show hits in certain folder (pinned/startmenu/desktop)
 	GUI Add, Checkbox, ys w16 h16 vrestricted_mode gset_restricted_mode Checked%restricted_mode% %advanced_status% , 
-	GUI Add, Text, ys w80 r1 vrestricted_mode_text gset_restricted_mode_text %restricted_mode%, &Restricted mode
+	GUI Add, Text, ys w80 r1 vrestricted_mode_text gset_restricted_mode_text %restricted_mode%, %gui_restrictedmode%
 	
 	; the listbox which will hold the results
-	GUI Add, ListView, x7 r20 w%gui_w_hitlist% vhitlist gsub_lv_cmd AltSubmit -multi count%max_results% sort hidden, Name|ext|Path|Score
+	GUI Add, ListView, x7 r20 w%gui_w_hitlist% vhitlist gsub_lv_cmd AltSubmit -multi count%max_results% sort hidden, %gui_hitlist%
 	GUIControlGet, hitlist, Pos		; to determine what Y the hitlist is at, needed for moving the controls
 	GoSub select_hitlist
 	if hide_extensions = 1	; hides the ext column
 		LV_ModifyCol(2, 0)
 
 	; the status line with information about the search time and selected file
-	GUI Add, Text, x9 w%gui_w_hitlist% r1 vstatus_text hidden, Fill search field...
+	Gui, add, StatusBar, vstatus_text, %gui_statustext%
+	; SB_SetParts(20) ; The icon first
+	SB_SetIcon(icon_search)
+	; GUI Add, Text, x9 w%gui_w_hitlist% r1 vstatus_text hidden, %gui_statustext%
 	GUIControlGet, status_text, Pos
-	if GUI_statusbar = 0
-		GUIControl, hide, status_text 
+	if GUI_statusbar = 1
+		GUIControl, show, status_text 
 	; this next section hides/shows controls based on settings
 	if search_advanced <> 1
 		GoSub GUI_advanced_hide
@@ -631,7 +642,7 @@ GUI:
 return
 MoveGui: ; berban : Allows for moving the GUI through the background image on the GUI
 	if gui_easymove = 1
-		PostMessage, 0xA1, 2,,, A ; berban
+		PostMessage, 0xA1, 2,,, A
 Return
 GUI_hide:
 	f_dbgtime(gen,dbg,A_LineNumber,"GUI_hide","start",3)
@@ -773,24 +784,24 @@ GUI2:	; the GUI with the preferences and settings
 	GoSub GUI2menu
 	; make the treeview
 	GUI, 2:Add, TreeView, r25 w150 vpref_tree gpref_treesel section
-	P1 := TV_Add("Program Options",0, "expand select")
-	P1C1 := TV_Add("Settings", P1, "expand")  ; Specify P1 to be this item's parent.
-	P1C1C1 := TV_Add("Results", P1C1)
-	P1C1C2 := TV_Add("Custom", P1C1)
-;	P1C1C3 := TV_Add("Hotkeys", P1C1)
-	P1C1C4 := TV_Add("Plugins", P1C1)
-	P1C2 := TV_Add("About", P1)
-;	P2 := TV_Add("Troubleshooting Log", P2)
+	P1 := TV_Add(gui2_p1,0, "expand select")	; Program Options
+	P1C1 := TV_Add(gui2_p1c1, P1, "expand")  ; Settings; Specify P1 to be this item's parent.
+	P1C1C1 := TV_Add(gui2_p1c1c1, P1C1)	; Results
+	P1C1C2 := TV_Add(gui2_p1c1c2, P1C1)	; Custom
+;	P1C1C3 := TV_Add(gui2_p1c1c3, P1C1)	; Hotkeys
+	P1C1C4 := TV_Add(gui2_p1c1c4, P1C1)	; Plugins
+	P1C2 := TV_Add(gui2_p1c2, P1)			; About
+;	P2 := TV_Add(gui2_p2, P2)				; Troubleshooting Log
 	GUIControlGet, pref_tree, Pos	; to determine what Y the top is
 	
 	; status bar which fills with text that are hopefully helpful to the user
-	GUI, 2:Add, GroupBox, x10 w640 h35 section, Information
+	GUI, 2:Add, GroupBox, x10 w640 h35 section, %gui2_information%
 	GUI, 2:Add, Text, xs+10 yp+15 w620 r1 v2statusbar, %info_statusbar%
 	OnMessage(0x200, "GUI2_MOUSEOVER") ; makes it so mouseover controls in the GUI will update the statusbar text
 	
-	GUI, 2:Add, Button, x300 yp-43 w100 vcheck_update_manual gcheck_update_manual, Check for updates
-	GUI, 2:Add, Button, xp+135 YP w100 vGUI2_button_reload gsub_reload, Reload
-	GUI, 2:Add, Button, xp+110 yp w100 default gGUI2_button_ok, OK	; default so it'll have focus, so an enter can just be pressed
+	GUI, 2:Add, Button, x300 yp-43 w100 vcheck_update_manual gcheck_update_manual, %gui2_checkforupdates%
+	GUI, 2:Add, Button, xp+135 YP w100 vGUI2_button_reload gsub_reload, %gui2_reload%
+	GUI, 2:Add, Button, xp+110 yp w100 default gGUI2_button_ok, %ok_button%	; default so it'll have focus, so an enter can just be pressed
 		
 	; get the selected tree item
 	tree_sel_prev 		:= TV_GetSelection()
@@ -799,13 +810,13 @@ GUI2:	; the GUI with the preferences and settings
 	GroupBoxX := pref_treex + pref_treew + 10
 
 	; "Program_Options" (shown at the start)
-	GUI, 2:Add, GroupBox, x%GroupBoxX% y%pref_treey% vp1_1_general w480 r6 section, General
+	GUI, 2:Add, GroupBox, x%GroupBoxX% y%pref_treey% vp1_1_general w480 r6 section, %gui2_gen%
 	
-	GUI, 2:Add, Checkbox, xp+20 yp+20 vautostart gsub_autostart_toggle Checked%autostart%, %A_Space%%A_Space%Start &automatically when Windows starts
-	GUI, 2:Add, Checkbox, xp yp+20 vcheck_for_updates_on_startup gGUI2_set_general Checked%check_for_updates_on_startup%, %A_Space%%A_Space%Check for &updates on startup
-	GUI, 2:Add, Checkbox, xp yp+20 vtraytip gGUI2_set_general Checked%traytip%, %A_Space%%A_Space%Show &TrayTip when performing an action
-	GUI, 2:Add, Checkbox, xp yp+20 vGUI_titlebar gGUI_titlebar Checked%GUI_titlebar%, %A_Space%%A_Space%Show &Titlebar on the search window
-	GUI, 2:Add, Checkbox, xp yp+20 vGUI_easymove gGUI_easymove Checked%GUI_titlebar%, %A_Space%%A_Space%EasyMove the search window by left clicking on the background
+	GUI, 2:Add, Checkbox, xp+20 yp+20 vautostart gsub_autostart_toggle Checked%autostart%, %A_Space%%A_Space%%gui2_gen_autostart%
+	GUI, 2:Add, Checkbox, xp yp+20 vcheck_for_updates_on_startup gGUI2_set_general Checked%check_for_updates_on_startup%, %A_Space%%A_Space%%gui2_gen_check%
+	GUI, 2:Add, Checkbox, xp yp+20 vtraytip gGUI2_set_general Checked%traytip%, %A_Space%%A_Space%%gui2_gen_traytip%
+	GUI, 2:Add, Checkbox, xp yp+20 vGUI_titlebar gGUI_titlebar Checked%GUI_titlebar%, %A_Space%%A_Space%%gui2_gen_titlebar%
+	GUI, 2:Add, Checkbox, xp yp+20 vGUI_easymove gGUI_easymove Checked%GUI_titlebar%, %A_Space%%A_Space%%gui2_gen_easymove%
 	
 	/*
 	to Add:
@@ -1589,17 +1600,7 @@ set_advanced:
 	IniWrite, %search_advanced%, %ini_file%, GUI, search_advanced
 return
 GUI_advanced_show:
-	GUIControl, show, advanced
-	GUIControl, show, search_inside
-	GUIControl, show, filter_extensions
-	GUIControl, show, filter_extensions_text
-	GUIControl, show, list_extensions
-	GUIControl, show, filter_folders
-	GUIControl, show, filter_folders_text
-	GUIControl, show, filter_ignores
-	GUIControl, show, filter_ignores_text
-	GUIControl, show, restricted_mode
-	GUIControl, show, restricted_mode_text
+	toggle_advanced_controls("show")
 	
 	; GUIControl,, filter_extensions_text, E&xtensions
 	GUIControl,, set_advanced, simpl&e
@@ -1610,19 +1611,9 @@ GUI_advanced_show:
 	GUI, Show, AutoSize	; autosizes the GUI
 return
 GUI_advanced_hide:
-	GUIControl, hide, advanced
-	GUIControl, hide, search_inside
-	GUIControl, hide, filter_extensions
-	GUIControl, hide, filter_extensions_text
-	GUIControl, hide, list_extensions
-	GUIControl, hide, filter_folders
-	GUIControl, hide, filter_folders_text
-	GUIControl, hide, filter_ignores
-	GUIControl, hide, filter_ignores_text
-	GUIControl, hide, restricted_mode
-	GUIControl, hide, restricted_mode_text
+	toggle_advanced_controls("hide")
 	
-	GUIControl,, set_advanced, advanc&ed
+	GUIControl,, set_advanced, %gui_advanced%
 	GUIControl, Move, hitlist, y%search_insidey%
 	simple_status_y := search_insidey + hitlisth + 3
 	GUIControl, Move, status_text, y%simple_status_y%
@@ -1630,6 +1621,21 @@ GUI_advanced_hide:
 	; gosub gui_bg_resize
 	GUI, Show, AutoSize	; autosizes the GUI
 return
+toggle_advanced_controls(state)
+{
+	GUIControl, %state%, advanced
+	GUIControl, %state%, search_inside
+	GUIControl, %state%, filter_extensions
+	GUIControl, %state%, filter_extensions_text
+	GUIControl, %state%, list_extensions
+	GUIControl, %state%, filter_folders
+	GUIControl, %state%, filter_folders_text
+	GUIControl, %state%, filter_ignores
+	GUIControl, %state%, filter_ignores_text
+	GUIControl, %state%, restricted_mode
+	GUIControl, %state%, restricted_mode_text
+	return
+}
 toggle_set_filter_extensions:
 	filter_extensions := !filter_extensions
 	GuiControl,, filter_extensions, %filter_extensions%
@@ -1774,159 +1780,137 @@ GUIContextMenu:
 		LV_GetText(command,selected_row,3)
 		Splitpath, command , , command_path, command_ext
 
-		Menu, Context, Add, Open, command_run
-		Menu, Context, Default, Open
-		Menu, Context, Add, Open with..., command_run_with
-		Menu, Context, Add, Open with arguments, command_run_args
-		Menu, Context, Add, Open as admin, command_run_admin
+		Menu, Context, Add, %t_cmd_open%, command_run
+/*
+		if command contains .exe
+		{
+			Menu, Context, Icon, %t_cmd_open%, %command%
+			Menu, Context, Icon, %t_cmd_openwith%, %command% ; a questionmark?
+			Menu, Context, Icon, %t_cmd_openwitharg%, %command% ; a different question mark with a white sheet behind it?
+		}
+*/
+		Menu, Context, Default, %t_cmd_open%
+		Menu, Context, Add, %t_cmd_openwith%, command_run_with
+		Menu, Context, Add, %t_cmd_openwitharg%, command_run_args
+		Menu, Context, Add, %t_cmd_openadmin%, command_run_admin
+		Menu, Context, Icon, %t_cmd_openadmin%, Shell32.dll, 45
 
-		if text_editor <>
-			Menu, Context, Add, Edit, GUI_edit
-	
 		Menu, Context, Add,
-		Menu, Context, Add, Open with %text_editor_name%, GUI_def_edit
-		Menu, Context, Add, Open with %graphics_editor_name%, GUI_def_gfx
-		Menu, Context, Add, Open with %file_browser_name%, GUI_def_fbrowse
+		Menu, Context, Add, %t_cmd_edit%, GUI_edit
+		Menu, Context, Add, %t_cmd_openwithapp% %text_editor_name%, GUI_def_edit
+		Menu, Context, Icon, %t_cmd_openwithapp% %text_editor_name%, %text_editor%
+		Menu, Context, Add, %t_cmd_openwithapp% %graphics_editor_name%, GUI_def_gfx
+		Menu, Context, Icon, %t_cmd_openwithapp% %graphics_editor_name%, %graphics_editor%
+		Menu, Context, Add, %t_cmd_openwithapp% %file_browser_name%, GUI_def_fbrowse
+		Menu, Context, Icon, %t_cmd_openwithapp% %file_browser_name%, %file_browser%
 
 		Menu, Context, Add,
-		Menu, Context, Add, Delete, GUI_Add_delete
+		Menu, Context, Add, %t_cmd_del%, GUI_Add_delete
+		Menu, Context, Icon, %t_cmd_del%, Shell32.dll, 32
 
 		if command_name contains (custom)
-			Menu, Context, Add, Delete from custom file, GUI_ADD_deletefromcustom
+			Menu, Context, Add, %t_cmd_delfromcustom%, GUI_ADD_deletefromcustom
 		if command_name contains (history)
-			Menu, Context, Add, Delete from history, GUI_ADD_deletefromhistory	
+			Menu, Context, Add, %t_cmd_delfromhistory%, GUI_ADD_deletefromhistory	
 		if command_name contains (ignored)
-			Menu, Context, Add, Delete from Ignore List, GUI_ADD_deletefromignorelist
+			Menu, Context, Add, %t_cmd_delfromignore%, GUI_ADD_deletefromignorelist
 			
 		Menu, Context, Add,
 		;Menu, Context, Add, Add Hotkey for %command%, GUI_Add_hotkey
-		Menu, Context, Add, CopyPath, GUI_Add_copypath
-		Menu, Context, Add, Add to ignore list, GUI_ADD_ignore
+		Menu, Context, Add, %t_copypath%, GUI_Add_copypath
+		Menu, Context, Add, %t_cmd_addignore%, GUI_ADD_ignore
 		Menu, Context, Add,
-		Menu, Context, Add, Properties, GUI_Add_properties
-		Menu, Context, Add, Browse folder, GUI_Add_browse
+		Menu, Context, Add, %t_cmd_properties%, GUI_Add_properties
+		Menu, Context, Add, %t_cmd_browse%, GUI_Add_browse
+		Menu, Context, Icon, %t_cmd_browse%, Shell32.dll, 4
 		Menu, Context, Add,
 	}
 
-	Menu, Context, Add, Always on top, GUI_alwaysontop
+	Menu, Context, Add, %t_alwaysontop%, GUI_alwaysontop
 	if GUI_ontop = 1
-		Menu, Context, Check, Always on top	
-	Menu, Context, Add, Autohide, GUI_autohide
+		Menu, Context, Check, %t_alwaysontop%	
+	Menu, Context, Add, %t_autohide%, GUI_autohide
 	if GUI_autohide = 1
-		Menu, Context, Check, Autohide
-	Menu, Context, Add, Easymove, GUI_easymove
+		Menu, Context, Check, %t_autohide%
+	Menu, Context, Add, %t_easymove%, GUI_easymove
 	if GUI_easymove = 1
-		Menu, Context, Check, Easymove	
-	Menu, Context, Add, Status bar, GUI_statusbar
+		Menu, Context, Check, %t_easymove%	
+	Menu, Context, Add, %t_statusbar%, GUI_statusbar
 	if GUI_statusbar = 1
-		Menu, Context, Check, Status bar
-	Menu, Context, Add, Title bar, GUI_titlebar
+		Menu, Context, Check, %t_statusbar%
+	Menu, Context, Add, %t_titlebar%, GUI_titlebar
 	if GUI_titlebar = 1
-		Menu, Context, Check, Title bar
+		Menu, Context, Check, %t_titlebar%
 
 	Menu, Context, Add, 
-	Menu, Context, Add, Check for updates, check_update_manual
-	Menu, Context, Add, Preferences, GUI2
-	Menu, Context, Icon, Preferences, %icon_settings%
+	Menu, Context, Add, %t_checkupdate%, check_update_manual
+	Menu, Context, Add, %t_preferences%, GUI2
+	Menu, Context, Icon, %t_preferences%, %icon_settings%
+	; Menu, Context, Icon, %t_preferences%, Shell32.dll, 177 ; 36
 	Menu, Context, Add, 
-	Menu, Context, Add, Reload, sub_reload
-	Menu, Context, Add, Exit, ExitSub
+	Menu, Context, Add, %t_reload%, sub_reload
+	Menu, Context, Add, %t_exit%, ExitSub
 	Menu, Context, Show, %A_GUIX%, %A_GUIY%	
 	Menu, Context, DeleteAll	; empties the context menu, else you'd get double entries
 	f_dbgtime(gen,dbg,A_LineNumber,"GUIContextMenu","stop",2)
 return
 GUI_easymove:
-	if GUI_easymove = 0
-	{
-		GUI_easymove = 1
-		Menu, Context, Check, Always on top	
-	}
-	else
-	{
-		GUI_easymove = 0
-		Menu, Context, Uncheck, Always on top
-	}
+	GUI_easymove := !GUI_easymove
 	IniWrite, %GUI_easymove%, %ini_file%, GUI, GUI_easymove
+	Menu, Context, ToggleCheck, %t_easymove%
 return
 GUI_alwaysontop:
-	if GUI_ontop = 0
-	{
-		GUI_ontop = 1
-		Menu, Context, Check, Always on top	
-		GUI +AlwaysOnTop
-	}
-	else
-	{
-		GUI_ontop = 0
-		Menu, Context, Uncheck, Always on top
-		GUI -AlwaysOnTop
-	}
+	GUI_ontop := !GUI_ontop
 	IniWrite, %GUI_ontop%, %ini_file%, GUI, GUI_ontop
+	Menu, Context, ToggleCheck, %t_alwaysontop%
+	if GUI_ontop = 1
+		GUI +AlwaysOnTop
+	else
+		GUI -AlwaysOnTop
 return
 GUI_autohide:
-	if GUI_autohide = 0
-	{
-		GUI_autohide = 1
-		Menu, Context, Check, Autohide
-		SetTimer timer_autohide, 1000
-	}
-	else
-	{
-		GUI_autohide = 0
-		Menu, Context, Uncheck, Autohide
-		SetTimer timer_autohide, Off
-	}
+	GUI_autohide := !GUI_autohide
 	IniWrite, %GUI_autohide%, %ini_file%, GUI, GUI_autohide
+	Menu, Context, ToggleCheck, %t_autohide%
+	if GUI_autohide = 1
+		SetTimer timer_autohide, 1000
+	else
+		SetTimer timer_autohide, Off
 return
 GUI_statusbar:
-	if GUI_statusbar = 0
-	{
-		GUI_statusbar = 1
-		Menu, Context, Check, Status bar
-		GUIControl, show, status_text 
-	}
-	else
-	{
-		GUI_statusbar = 0
-		Menu, Context, UnCheck, Status bar
-		GUIControl, hide, status_text
-	}
-	GUI, Show, AutoSize, %GUI2_name%
+	GUI_statusbar := !GUI_statusbar
 	IniWrite, %GUI_statusbar%, %ini_file%, GUI, GUI_statusbar
+	Menu, Context, ToggleCheck, %t_statusbar%	
+	if GUI_statusbar = 1
+		GUIControl, show, status_text 
+	else
+		GUIControl, hide, status_text
+	GUI, Show, AutoSize, %GUI2_name%
 return
 GUI_titlebar:
-	if GUI_titlebar = 0
-	{
-		GUI_titlebar = 1
-		Menu, Context, Check, Title bar
-		GUI +theme
-		GUI +sysmenu 
-		GUI +caption 
-	}
-	else
-	{
-		GUI_titlebar = 0
-		Menu, Context, UnCheck, Title bar
-		GUI -theme -sysmenu -caption +border
-	}
+	GUI_titlebar := !GUI_titlebar
 	IniWrite, %GUI_titlebar%, %ini_file%, GUI, GUI_titlebar
+	Menu, Context, ToggleCheck, %t_statusbar%
+	if GUI_titlebar = 1
+		GUI +theme +sysmenu +caption 
+	else
+		GUI -theme -sysmenu -caption +border
 return
 GUI_edit:
-	selected_program := getprogram(command_ext)
-	if selected_program <>
-		run, "%selected_program%" "%command%" , %command_path% , UseErrorLevel
-	else
-		run, edit "%command%" , %command_path% , UseErrorLevel
+	run, edit "%command%" , %command_path% , UseErrorLevel
 	GoSub sub_errorlevel		; needed so the msgbox contains the right feedback to the user pertaining the error
 return
 GUI_def_edit:
 	run, "%text_editor%" "%command%" , %command_path% , UseErrorLevel
+	GoSub sub_errorlevel		; needed so the msgbox contains the right feedback to the user pertaining the error
 return
 GUI_def_gfx:
 	run, "%graphics_editor%" "%command%" , %command_path% , UseErrorLevel
+	GoSub sub_errorlevel		; needed so the msgbox contains the right feedback to the user pertaining the error
 return
 GUI_def_fbrowse:
 	run, "%file_browser%" "%command%" , %command_path% , UseErrorLevel
+	GoSub sub_errorlevel		; needed so the msgbox contains the right feedback to the user pertaining the error
 return
 GUI_Add_copypath:
 	clipboard = %command%
@@ -2021,7 +2005,10 @@ GUI_Add_browse:
 	GoSub sub_errorlevel		; needed so the msgbox contains the right feedback to the user pertaining the error
 return
 search:
-	SetTimer, timer_execute_search, -%search_delay% ; Delay after typing stops, to prevent the script from firing prematurely
+	gui, submit, nohide
+	if command_search !=
+		SetTimer, timer_execute_search, -%search_delay% ; Delay after typing stops, to prevent the script from firing prematurely
+		
 	if gui_xempty = 1
 		GUIControl,, sub_clear, x
 return
@@ -2030,12 +2017,14 @@ sub_empty:
 	LV_Delete()	; empty the list to ready it for the results
 	if command_search =
 	{
-		GUIControl, hide, hitlist
-		GUIControl, hide, status_text
-		if GUI_hidden <> 1	; only autosize when the GUI is shown
-			GUI, show, autosize	; needed to resize the GUI
+		SB_SetText(gui_statustext)
+		gosub gui_othersearch
 	}
-	;GUIControl,, status_text, Fill search field...	; empty the status bar
+return
+gui_othersearch:
+	GUIControl, hide, hitlist
+	if GUI_hidden <> 1	; only autosize when the GUI is shown
+		GUI, show, autosize	; needed to resize the GUI
 return
 gui_xempty:
 	GUIControl,, command_search, 	; empties the command_search editbox
@@ -2060,19 +2049,45 @@ timer_execute_search:
 	; this subroutine is where the script actually starts to search
 	f_dbgtime(gen,dbg,A_LineNumber,"timer_execute_search","start",2)
 	GUI, Submit, NoHide	; retrieve the variables from the GUI
-
+	firstchars := Substr(command_search,1,2)
 	if command_search =	; no search entry, so no need to go further
 	{
 		GoSub sub_empty
 		f_dbgtime(gen,dbg,A_LineNumber,"timer_execute_search","stop",2)
 		return
 	}
-	if ( Substr(command_search,1,2) = "? " )
+	else if ( firstchars = "? " )
 	{
-		GoSub sub_empty
+		StringTrimLeft, google_search, command_search, 2
+		if set_search = 1	; to prevent flickering of the GUI
+		{
+			SB_SetText("Search Google for: " . google_search)
+			return
+		}
+		set_search = 1
+		GoSub gui_othersearch
+		SB_SetText("Search Google for: " . google_search)
 		f_dbgtime(gen,dbg,A_LineNumber,"timer_execute_search","stop",2)
 		return
 	}
+	else if ( firstchars = "`= " )
+	{
+		if set_calc = 1	; to prevent flickering of the GUI
+			return
+		set_calc = 1
+		GoSub gui_othersearch
+		SB_SetIcon(icon_formula)
+		SB_SetText("Enter calculation")		
+		f_dbgtime(gen,dbg,A_LineNumber,"timer_execute_search","stop",2)
+		return
+	}
+	else
+	{
+		set_calc = 0
+		set_search = 0
+		SB_SetIcon(icon_search)	; default search icon
+	}
+
 
 	/*
 	if command_search contains %command_search_old%	; no search entry, so no need to go further
@@ -2167,7 +2182,8 @@ timer_execute_search:
 	f_dbgtime(gen,dbg,A_LineNumber,"timer_execute_search","stop",2)
 return
 timer_check_find:
-	GUIControl,, status_text, %find_text% (ctrl x to cancel)
+	SB_SetText(find_text . "(ctrl x to cancel)")
+	; GUIControl,, status_text, %find_text% (ctrl x to cancel)
 	loop
 	{
 		if app_pid =
@@ -2313,30 +2329,12 @@ update_hitlist:	; in a separate subroutine so we can call it when a filter is en
 	}	
 	; outputdebug misscounter = 	%missfolders% folders + %missextensions% extensions + %missignores% ignored + %missrestricted% outside restricted
 	misscounter += missfolders + missextensions + missignores + missrestricted
-
-	if hitcounter > 0
-	{
-		GUIControl, show, hitlist
-		GUIControl, show, status_text
-	}
-	else if misscounter > 0	; meaning, if hitcounter = 0
-	{
-		GUIControl, show, hitlist
-		; do we want to hide the hitlist? If so, we need to move the status_text
-		GUIControl, show, status_text
-	}
-	else	; both hitcounter and misscounter are 0, meaning nothing has been found
-	{
-		GUIControl, show, hitlist
-		; move the status_text though
-		GUIControl, show, status_text
-	}
 	
 	if command_search =
-	{
 		GUIControl, hide, hitlist
-		GUIControl, hide, status_text
-	}
+	else
+		GUIControl, show, hitlist
+
 	gosub select_hitlist
 	LV_ModifyCol(3,"AutoHdr") 	; resizes column 3
 	if use_score = 1
@@ -2385,7 +2383,10 @@ update_status_text:
 		text_search_time = Found %hitcounter% %hits% in %elapsed_time% %seconds%
 	else
 		text_search_time = Found %hitcounter% %hits% in %elapsed_time% %seconds% (%misscounter% %misshits% not shown)
-	GUIControl,, status_text, %text_search_time%
+
+	; ( elapsed_time = 1 ? " change" : " changes")
+	; GUIControl,, status_text, %text_search_time%
+	SB_SetText(text_search_time)
 return
 select_hitlist:
 	GUI, 1:Default	; just to make sure we fill the right GUI
@@ -2466,7 +2467,8 @@ sub_lv_cmd:
 		}
 		else
 			text = %text_search_time%
-		GUIControl, , status_text , %text%
+		; GUIControl, , status_text , %text%
+		SB_SetText(text)
 	}
 	f_dbgtime(gen,dbg,A_LineNumber,"sub_lv_cmd","stop",3)
 return
@@ -2496,18 +2498,28 @@ command_run_with:
 return
 command_run:
 	gui, submit, nohide
+	firstchars := SubStr(command_search,1,2)
 	if command_search = "" ; needs to be here in case user presses enter on an empty search command
 	{
 		f_dbgtime(gen,dbg,A_LineNumber,"timer_execute_search","stop",3)
 		return
 	}
-	else if ( SubStr(command_search,1,2) == "? " )
+	if set_search = 1
 	{
 		command_search := SubStr(command_search,3)
 		; StringTrimLeft, command_search, command_search, 2
 		StringReplace, command_search, command_search, %A_Space%, `%20, ALL
 		run, https://www.google.com/#hl=en&output=search&sclient=psy-ab&q=%command_search%
 		GoSub sub_clear
+		f_dbgtime(gen,dbg,A_LineNumber,"timer_execute_search","stop",2)
+		return
+	}
+	if set_calc = 1
+	{
+		; calculate
+		StringTrimleft, command_calc, command_search, 2
+		GuiControl,, command_search, % "`= " . eval(command_calc)
+		Send {end}
 		f_dbgtime(gen,dbg,A_LineNumber,"timer_execute_search","stop",2)
 		return
 	}
@@ -2627,15 +2639,15 @@ about:
 	msgbox , , %app_name% %app_version%, %text_about%
 return
 first_time_gui:
-	GUI, 3:Add, Text, section, Select your preferences.`nThese preferences can later be changed.
-	GUI, 3:Add, Listview, ys vFirst_list h125 w275 Checked -Hdr, Name|variable
-	GUI, 3:Add, Button, xs gfirst_time_cancel w75 section, &Cancel
-	GUI, 3:Add, Button, x325 ys vfirst_time_back gfirst_time_back w75, < &Back 
-	GUI, 3:Add, Button, x415 ys vfirst_time_next gfirst_time_next w75 default, &Next >
-	GUI, 3:Add, Button, x415 ys vfirst_time_ok gfirst_time_ok w75 hidden, &Finish 
+	GUI, 3:Add, Text, section, %gui3_preferences%
+	GUI, 3:Add, Listview, ys vFirst_list h125 w275 Checked -Hdr, %gui3_firstlist%
+	GUI, 3:Add, Button, xs gfirst_time_cancel w75 section, %gui3_cancel%
+	GUI, 3:Add, Button, x325 ys vfirst_time_back gfirst_time_back w75, < %gui3_back% 
+	GUI, 3:Add, Button, x415 ys vfirst_time_next gfirst_time_next w75 default, %gui3_next% >
+	GUI, 3:Add, Button, x415 ys vfirst_time_ok gfirst_time_ok w75 hidden, %gui3_finish%
 	gosub first_lv_1
 	lv_page = 1
-	GUI, 3:Show, autosize, %gui_name%: Setup wizard
+	GUI, 3:Show, autosize, %gui_name%: %gui3_title%
 return
 first_lv_1:
 	GUI, 3:Default	; just to make sure we fill the right GUI

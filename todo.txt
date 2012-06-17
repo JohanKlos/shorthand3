@@ -4,10 +4,21 @@ TO DO
 -----------------------------
 	short term
 	-------------------------
+	- preferences : titlebar gives error if toggled without the gui1 visible
+	- commented lines from custom showing up?
+	- check password encryption against http://throwingfire.com/storing-passwords-securely/
+	- plugin search for autohotkey : add different sites, like wikipedia and imdb
+	- fix calculator (= )
+	- check hotkeyit for ideas
+		* password: StringCaseSense On
+	- traytip not show path
+	- split hardcoded text into language vars
 	- create language files
+		* add "change language" subroutine to menu > just reload seems easiest because of gui and menu's
 	- create About GUI
 	- add "action" in GUI (instead of contextmenu) : see demo of nDroid: http://www.codenite.com/demo.html
 	- troubleshoot plugin checker
+	- resize gui
 	- add context menu option to add custom entries (add hotkey option and everything) > only run files, not sends (as those don't show up in the hitlist)
 	- add context menu to add to ignore list
 	- add context menu to remove from ignore list
