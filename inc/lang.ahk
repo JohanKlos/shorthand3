@@ -17,6 +17,12 @@
 	logging_4 			= extended logging (also steps inside each function)
 	logging_5 			= timer logging
 
+	error_findstr_not_found = Findstr.exe has not been found on your system.`n`nPlease get it and place it in %app_folder%. Searching inside files will not be possible until Findstr.exe is in %app_folder%.
+
+	find_text1 = Searching for a file
+	find_text2 = Searching inside files	
+	cancel_text = (ctrl x to cancel)
+	
 	info_target_icon = Click this icon for some quick settings.
 	info_set_advanced = (Alt-E) Click this to toggle between simple and advanced interface.
 	info_command_search = (Alt-Space) Type your search entry here`, the list below will be populated with the hits.
@@ -36,10 +42,11 @@
 	info_file_browser = This program will be used to open certain files opened through %app_name%.	
 	info_GUI_ontop = The main %app_name% window will stay on top of all other windows.
 	info_GUI_fade = The main %app_name% window will fade in and out of sight. Note: takes slightly longer to show and hide the main window.
-	info_GUI_statusbar = If checked`, Adds a statusbar underneath the results in the main %app_name% window.
+	info_GUI_statusbar = If checked`, this will add a statusbar in the main %app_name% window.
 	info_GUI_autohide = If checked`, the main %app_name% window will hide as soon as it loses focus.
 	info_GUI_hideafterrun = If checked`, the main %app_name% window will hide after a command is run.
 	info_GUI_emptyafterrun = If checked`, the search text in the main %app_name% window will be cleared after a command is run.
+	info_GUI_emptyafter30 = If chekced, the search text in the main %app_name% window will be cleared after 30 seconds of non-typing.
 	info_filter_folders = If checked`, the folders will not show up in the results.
 	info_filter_extensions = If checked`, only listed extensions will show up in the results. If folders are not filtered out, they will still show up.
 	info_filter_ignores = Any file or folder which has one of the listed strings`, will not show up in the results.
@@ -110,6 +117,5 @@
 	gui2_gen_traytip = Show &TrayTip when performing an action
 	gui2_gen_titlebar = Show Title&bar on the search window
 	gui2_gen_easymove = EasyMove the search window by left clicking on the background
-
 	
 ; }

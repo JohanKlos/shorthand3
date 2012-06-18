@@ -852,7 +852,7 @@ GUI2:	; the GUI with the preferences and settings
 	
 	
 	; "Settings"
-	GUI, 2:Add, GroupBox, x%GroupBoxX% y%pref_treey% vp1c1_1 w480 h200 section hidden, Settings
+	GUI, 2:Add, GroupBox, x%GroupBoxX% y%pref_treey% vp1c1_1 w480 h160 section hidden, Settings
 	GUI, 2:Add, Checkbox, xp+20 yp+20 vGUI_ontop gGUI2_set Checked%GUI_ontop% hidden, %A_Space%%A_Space%Main window is &always on top
 	GUI, 2:Add, Checkbox, xp yp+20 vGUI_fade gGUI2_set Checked%GUI_fade% hidden, %A_Space%%A_Space%&Fade the main window in and out
 	GUI, 2:Add, Checkbox, xp yp+20 vGUI_statusbar gGUI2_set Checked%GUI_statusbar% hidden, %A_Space%%A_Space%&Status bar in the main window
@@ -860,8 +860,9 @@ GUI2:	; the GUI with the preferences and settings
 	GUI, 2:Add, Checkbox, xp yp+20 vGUI_autohide gGUI2_set Checked%GUI_autohide% hidden, %A_Space%%A_Space%&Hide the main window when it loses focus
 	GUI, 2:Add, Checkbox, xp yp+20 vGUI_hideafterrun gGUI2_set Checked%GUI_hideafterrun% hidden, %A_Space%%A_Space%H&ide the main window after running a command
 	GUI, 2:Add, Checkbox, xp yp+20 vGUI_emptyafterrun gGUI2_set Checked%GUI_emptyafterrun% hidden, %A_Space%%A_Space%&Clear search text after running a command
+	GUI, 2:Add, Checkbox, xp yp+20 vGUI_emptyafter30 gGUI2_set Checked%GUI_emptyafter30% hidden, %A_Space%%A_Space%C&lear search text after 30 seconds of non-typing
 
-	Settings = p1c1_1|GUI_ontop|GUI_autohide|GUI_fade|GUI_statusbar|GUI_hideafterrun|GUI_emptyafterrun
+	Settings = p1c1_1|GUI_ontop|GUI_autohide|GUI_fade|GUI_statusbar|GUI_hideafterrun|GUI_emptyafterrun|GUI_emptyafter30
 	
 	
 	; "Results"
@@ -2008,9 +2009,31 @@ search:
 	gui, submit, nohide
 	if command_search !=
 		SetTimer, timer_execute_search, -%search_delay% ; Delay after typing stops, to prevent the script from firing prematurely
-		
+	settimer, timer_checkempty
+	if GUI_emptyafter30 = 1
+	{
+		i := 0
+		settimer, timer_emptyafter30, 1000
+	}
 	if gui_xempty = 1
 		GUIControl,, sub_clear, x
+return
+timer_checkempty:
+	gui, submit, nohide
+	if command_search =
+		gosub sub_empty
+return
+timer_emptyafter30:
+	; outputdebug > %i%
+	if GUI_emptyafter30 = 0
+		settimer, timer_emptyafter30, off
+	i++
+	if i > 60
+	{
+		guicontrol,, command_search,
+		gosub sub_empty
+		settimer, timer_emptyafter30, off
+	}
 return
 sub_empty:
 	GoSub select_hitlist	; makes sure we select the right listview to empty
@@ -2018,8 +2041,11 @@ sub_empty:
 	if command_search =
 	{
 		SB_SetText(gui_statustext)
+		SB_SetIcon(icon_search)	; default search icon
 		gosub gui_othersearch
 	}
+	SetTimer, timer_checkempty, off
+	SetTimer, timer_emptyafter30, off
 return
 gui_othersearch:
 	GUIControl, hide, hitlist
@@ -2043,30 +2069,71 @@ sub_clear:
 	command_ext_split :=
 	arguments :=
 return
+parse_search_engines(entry,desc="")
+{
+	global ini_file
+	IniRead, search_engines, %ini_file%, General, search_engines
+	loop, parse, search_engines, `,
+	{
+		line := A_LoopField
+		if found = 1
+			break
+		loop, parse, line, |
+		{
+			if ( A_Index = 1 ) && ( desc != "" ) && ( A_LoopField = desc )
+				found = 1
+			if A_Index = %entry%
+			{
+				if entry = 1
+					engine .= A_LoopField . ","
+				else if found = 1
+					engine := A_LoopField
+			}
+		}
+	}
+	if ( desc != "" ) && ( found != 1 )
+		engine :=
+	if entry = 1
+		StringTrimRight, engine, engine, 1
+	return engine
+}
 timer_execute_search:
 	Hotkey, ^x, find_interrupt
 	; previously GUI_fill_results
 	; this subroutine is where the script actually starts to search
 	f_dbgtime(gen,dbg,A_LineNumber,"timer_execute_search","start",2)
 	GUI, Submit, NoHide	; retrieve the variables from the GUI
+	
+	firstchar := Substr(command_search,1,1)
 	firstchars := Substr(command_search,1,2)
+	firstspace := InStr(command_search,A_Space)
+	
+	search_engine_short := Substr(command_search,2,(firstspace = 0) ? StrLen(command_search) : firstspace - 2 )	; this will get the chars after the ? and before the first space
+	engine_list := parse_search_engines(1)	
+	if search_engine_short not in %engine_list%
+		IniRead, search_engine_short, %ini_file%, General, search_engine_default ; use the default search engine
+	
 	if command_search =	; no search entry, so no need to go further
 	{
 		GoSub sub_empty
 		f_dbgtime(gen,dbg,A_LineNumber,"timer_execute_search","stop",2)
 		return
 	}
-	else if ( firstchars = "? " )
+	else if ( firstchar = "?" ) && ( search_engine_short in engine_list )
 	{
-		StringTrimLeft, google_search, command_search, 2
-		if set_search = 1	; to prevent flickering of the GUI
+		engine_desc := parse_search_engines(2,search_engine_short)
+		engine_URL := parse_search_engines(3,search_engine_short)
+		engine_search := SubStr(command_search,firstspace + 1)
+		if engine_URL =
+			engine_URL := parse_search_engines(3,search_engine_default)
+
+		if set_search != 1	; to prevent flickering of the GUI
 		{
-			SB_SetText("Search Google for: " . google_search)
-			return
+			GoSub gui_othersearch
+			SB_SetIcon(icon_search)
 		}
-		set_search = 1
-		GoSub gui_othersearch
-		SB_SetText("Search Google for: " . google_search)
+		set_search = 1	; so the command run knows to execute the engine_URL instead of the file
+		SB_SetText("Search " . engine_desc . " for: " . engine_search)
 		f_dbgtime(gen,dbg,A_LineNumber,"timer_execute_search","stop",2)
 		return
 	}
@@ -2087,7 +2154,6 @@ timer_execute_search:
 		set_search = 0
 		SB_SetIcon(icon_search)	; default search icon
 	}
-
 
 	/*
 	if command_search contains %command_search_old%	; no search entry, so no need to go further
@@ -2126,7 +2192,7 @@ timer_execute_search:
 	f_dbgtime(gen,dbg,A_LineNumber,"app_find","start",2)
 	; the actual search
 	app_pid :=	; clear the variable before use
-	find_text = Searching for a file
+	find_text := find_text1
 
 	if use_everything = 1
 	{
@@ -2149,7 +2215,7 @@ timer_execute_search:
 			ifexist C:\WINDOWS\system32\findstr.exe
 				FileCopy C:\WINDOWS\system32\findstr.exe, %app_findstr%
 			else
-				msgbox, , %app_name% %app_version%, Findstr.exe has not been found on your system.`n`nPlease get it and place it in %app_folder%. Searching inside files will not be possible until Findstr.exe is in %app_folder%.
+				msgbox, , %app_name% %app_version%, %error_findstr_not_found%
 		}
 		; check if the temporary (filtered) output file exists, if so, delete it
 		ifexist %result_filename2%
@@ -2159,7 +2225,7 @@ timer_execute_search:
 		f_dbgtime(gen,dbg,A_LineNumber,"app_findstr","start",2)
 		; the search inside the search result files
 		app_pid :=	; clear the variable before use
-		find_text = Searching inside files
+		find_text := find_text2
 		settimer, timer_check_find	; this timer sleeps 1 second and then starts checking for the existence of the %app_PID%
 		runwait, %comspec% %debug% ""%app_findstr%" /M /I /F:"%result_filename%" "%search_inside%" > "%result_filename2%"" , %A_ScriptDir% , hide, app_PID
 		
@@ -2330,8 +2396,13 @@ update_hitlist:	; in a separate subroutine so we can call it when a filter is en
 	; outputdebug misscounter = 	%missfolders% folders + %missextensions% extensions + %missignores% ignored + %missrestricted% outside restricted
 	misscounter += missfolders + missextensions + missignores + missrestricted
 	
-	if command_search =
+	if command_search = ""
 		GUIControl, hide, hitlist
+	else if hitcounter = 0
+	{
+		SB_SetIcon(icon_send)
+		GUIControl, hide, hitlist
+	}
 	else
 		GUIControl, show, hitlist
 
@@ -2497,19 +2568,17 @@ command_run_with:
 	command_run_with = 0
 return
 command_run:
+	settimer, timer_emptyafter30, off
 	gui, submit, nohide
-	firstchars := SubStr(command_search,1,2)
 	if command_search = "" ; needs to be here in case user presses enter on an empty search command
 	{
 		f_dbgtime(gen,dbg,A_LineNumber,"timer_execute_search","stop",3)
 		return
 	}
 	if set_search = 1
-	{
-		command_search := SubStr(command_search,3)
-		; StringTrimLeft, command_search, command_search, 2
-		StringReplace, command_search, command_search, %A_Space%, `%20, ALL
-		run, https://www.google.com/#hl=en&output=search&sclient=psy-ab&q=%command_search%
+	{	
+		StringReplace, engine_search, engine_search, %A_Space%, `%20, ALL
+		run, % engine_URL . engine_search
 		GoSub sub_clear
 		f_dbgtime(gen,dbg,A_LineNumber,"timer_execute_search","stop",2)
 		return

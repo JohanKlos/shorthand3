@@ -4,6 +4,7 @@ TO DO
 -----------------------------
 	short term
 	-------------------------
+	- add engines for search (look for "URL = ")
 	- preferences : titlebar gives error if toggled without the gui1 visible
 	- commented lines from custom showing up?
 	- check password encryption against http://throwingfire.com/storing-passwords-securely/

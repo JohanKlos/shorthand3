@@ -68,9 +68,19 @@ Read_ini:
 	IniRead, update_interval, %ini_file%, General, update_interval, 600000 ; how often to scan for updates (default: every hour)
 	IniRead, autostart, %ini_file%, General, autostart, 0					; places a link in the startup menu of the current user
 	IniRead, max_custom, %ini_file%, General, max_custom, 20				; the maximum number of custom_files it'll look for
+	
+	IniRead, search_engine_default, %ini_file%, General, search_engine_default, 	; the default short search engine, if the input is unclear, this is what it defaults to
+	if search_engine_default = ERROR
+		IniWrite, g, %ini_file%, General, search_engine_default
+	IniRead, search_engines, %ini_file%, General, search_engines			; search engines, become available when user types: "?g " for Google, etc.
+	if search_engines = ERROR
+	{
+		search_engines = g|Google|https://www.google.com/#hl=en&output=search&sclient=psy-ab&q=`,w|Wikipedia|http://en.wikipedia.org/wiki/`,i|IMdb|http://www.imdb.com/find?hl=en&q=`,a|Amazon.com|http://www.amazon.com/s/ref=nb_sb_noss_2/185-9406354-8142815?url=search-alias`%3Daps&field-keywords=					
+		IniWrite, %search_engines%, %ini_file%, General, search_engines
+	}
 
-	IniRead, GUI_x, %ini_file%, GUI, GUI_x, 0									; x position for the main GUI
-	IniRead, GUI_y, %ini_file%, GUI, GUI_y, 0									; y position for the main GUI
+	IniRead, GUI_x, %ini_file%, GUI, GUI_x, 0								; default x position for the main GUI
+	IniRead, GUI_y, %ini_file%, GUI, GUI_y, 0								; default y position for the main GUI
 	IniRead, GUI_w, %ini_file%, GUI, GUI_w, 447								; width for the main GUI
 	IniRead, GUI_h, %ini_file%, GUI, GUI_h, 127								; height for the main GUI
 
@@ -107,7 +117,8 @@ Read_ini:
 	IniRead, restricted_mode, %ini_file%, GUI, restricted_mode, 1			; 1 means it'll only show hits in one of the restricted folders
 	A_TaskbarPinned = %AppData%\Microsoft\Internet Explorer\Quick Launch\User Pinned\TaskBar
 	restricted_list = %A_Desktop%,%A_DesktopCommon%,%A_StartMenu%,%A_StartMenuCommon%,%A_TaskbarPinned%
-		
+
+	
 	IniRead, GUI_ontop, %ini_file%, GUI, GUI_ontop, 1						; if 1 the search window will be always on top when not hidden
 	IniRead, GUI_fade, %ini_file%, GUI, GUI_fade, 0							; if 1 fades the search window in and out
 	IniRead, transparency_step, %ini_file%, GUI, transparency_step, 50		; steps, the higher the number, the faster the fade
@@ -117,6 +128,7 @@ Read_ini:
 	IniRead, GUI_autohide, %ini_file%, GUI, GUI_autohide, 1					; if 1 the search window autohides when it doesn't have focus
 	IniRead, GUI_hideafterrun, %ini_file%, GUI, GUI_hideafterrun, 1		; if 1 the search window hides after a run
 	IniRead, GUI_emptyafterrun, %ini_file%, GUI, GUI_emptyafterrun, 1		; if 1 the command_search empties after a run
+	IniRead, GUI_emptyafter30, %ini_file%, GUI, GUI_emptyafter30, 1		; if 1 the command_search empties after 30 seconds
 	
 	IniRead, GUI_resize, %ini_file%, GUI, GUI_resize, 0						; if 1 the main window can be manually resized
 	IniRead, GUI_easymove, %ini_file%, GUI, GUI_easymove, 1					; if 1, the GUI can be moved by clicking anywhere
