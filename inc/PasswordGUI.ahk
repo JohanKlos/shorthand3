@@ -1,8 +1,10 @@
+/*
 	string := "124934412"
 	password := "007"
 	hash := Crypt.Encrypt.StrEncrypt(string,password,5,1) ; encrypts string using AES_128 encryption and MD5 hash
 	clipboard := hash
 	decrypted_string := Crypt.Encrypt.StrDecrypt(hash,password,5,1)				  ; decrypts the string using previously generated hash,AES_128 and MD5
+*/
 GUI11()
 {
 	GUI 11:destroy

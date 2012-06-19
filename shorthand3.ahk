@@ -46,6 +46,7 @@ f_dbgtime(gen,dbg,A_LineNumber,"Bootup","start",0) ; sub_time shows in outputdeb
 		Hotkey, !I, toggle_set_filter_ignores
 		Hotkey, !R, toggle_set_restricted
 		Hotkey, Delete, GUI_Add_deletebtn
+		Hotkey, !Enter, command_run_admin	; press alt-enter to run as admin
 	Hotkey, IfWinActive
 
 	use_everything := 1
@@ -55,7 +56,7 @@ f_dbgtime(gen,dbg,A_LineNumber,"Bootup","stop",0)
 	#include %A_ScriptDir%\inc\Crypt.ahk			; required for encrypting and decrypting a string
 	#include %A_ScriptDir%\inc\CryptFoos.ahk		; required for encrypting and decrypting a string
 	#include %A_ScriptDir%\inc\CryptConst.ahk		; required for encrypting and decrypting a string
-	#include %A_ScriptDir%\inc\PasswordGUI.ahk	; required for encrypting and decrypting a string
+	; #include %A_ScriptDir%\inc\PasswordGUI.ahk	; required for encrypting and decrypting a string
 
 	#include %A_ScriptDir%\inc\MFT.ahk				; alternative to "everything.exe" and "es.exe"
 Return
@@ -104,7 +105,7 @@ timer_load_custom:	; loads the custom_files, in which user can use shorthand and
 `; - name can be anything
 `; - contents is applicable when with choice "send" or "password" is chosen
 `; - hotkey is the hotkey that will execute the path or contents, using CTRL, ALT, SHIFT, SPACE, and any letters or numbers
-`; - choice can be either send, run, password
+`; - choice can be either send, run, runasadmin, password
 
 `; example:
 `; np|C:\Windows\System32\notepad.exe|WIN+N|run
@@ -292,8 +293,10 @@ hotkey_run:	; this subroutine is fired when the user presses a hotkey, at which 
 			else if A_Index = 3
 			{
 				h_choice := A_LoopField
-				if h_choice = run
+				if(h_choice = "run") || (h_choice = "runasadmin")
 				{
+					if h_choice = runasadmin
+						RunAsAdmin = 1
 					Splitpath, h_command , , command_path, command_ext, command_name_noext
 					StringReplace, pressed_hotkey,A_ThisHotkey,+,SHIFT%A_Space%
 					StringReplace, pressed_hotkey,pressed_hotkey,^,CTRL%A_Space%
@@ -301,6 +304,8 @@ hotkey_run:	; this subroutine is fired when the user presses a hotkey, at which 
 					StringReplace, pressed_hotkey,pressed_hotkey,#,WIN%A_Space%					
 
 					gosub sub_getextandrun
+					if h_choice = runasadmin
+						RunAsAdmin = 0
 					pressed_hotkey :=	""
 				}
 				else if h_choice = password
@@ -610,6 +615,7 @@ GUI:
 	GUI Add, ListView, x7 r20 w%gui_w_hitlist% vhitlist gsub_lv_cmd AltSubmit -multi count%max_results% sort hidden, %gui_hitlist%
 	GUIControlGet, hitlist, Pos		; to determine what Y the hitlist is at, needed for moving the controls
 	GoSub select_hitlist
+	LV_ModifyCol(5,0)	; hides the run/runas column
 	if hide_extensions = 1	; hides the ext column
 		LV_ModifyCol(2, 0)
 
@@ -804,7 +810,7 @@ GUI2:	; the GUI with the preferences and settings
 	GUI, 2:Add, Button, xp+110 yp w100 default gGUI2_button_ok, %ok_button%	; default so it'll have focus, so an enter can just be pressed
 		
 	; get the selected tree item
-	tree_sel_prev 		:= TV_GetSelection()
+	tree_sel_prev := TV_GetSelection()
 	TV_GetText(tree_sel_prev_text, tree_sel_prev)
 	StringReplace, tree_sel_prev_text, tree_sel_prev_text, %A_Space%, _, ALL	; we'll be using the text  as a variable
 	GroupBoxX := pref_treex + pref_treew + 10
@@ -850,7 +856,6 @@ GUI2:	; the GUI with the preferences and settings
 	; this is a list of all the variables on this treeview selection, need it to easily hide/show
 	Program_Options = p1_1_general|autostart|traytip|GUI_titlebar|GUI_easymove|check_for_updates_on_startup|p1_1_progs|browser_text|browser|select_browser|text_editor_text|text_editor|select_text_editor|graphics_editor_text|graphics_editor|select_graphics_editor|file_browser_text|file_browser|select_file_browser|graphics_editor_text2|graphics_editor_ext|text_editor_text2|text_editor_ext	
 	
-	
 	; "Settings"
 	GUI, 2:Add, GroupBox, x%GroupBoxX% y%pref_treey% vp1c1_1 w480 h160 section hidden, Settings
 	GUI, 2:Add, Checkbox, xp+20 yp+20 vGUI_ontop gGUI2_set Checked%GUI_ontop% hidden, %A_Space%%A_Space%Main window is &always on top
@@ -863,7 +868,6 @@ GUI2:	; the GUI with the preferences and settings
 	GUI, 2:Add, Checkbox, xp yp+20 vGUI_emptyafter30 gGUI2_set Checked%GUI_emptyafter30% hidden, %A_Space%%A_Space%C&lear search text after 30 seconds of non-typing
 
 	Settings = p1c1_1|GUI_ontop|GUI_autohide|GUI_fade|GUI_statusbar|GUI_hideafterrun|GUI_emptyafterrun|GUI_emptyafter30
-	
 	
 	; "Results"
 	GUI, 2:Add, GroupBox, x%GroupBoxX% y%pref_treey% vp1c1c1_1 w480 h200 section hidden, Results
@@ -1116,11 +1120,8 @@ lv_plugins_fill:
 	}
 	; name|version|category
 	LV_ModifyCol(1,"Sort")	; to sort the active and disabled plugins alphabetically
-	LV_ModifyCol(1,"AutoHdr")
-	LV_ModifyCol(2,"AutoHdr")
-	LV_ModifyCol(3,"AutoHdr")
-	LV_ModifyCol(4,"AutoHdr")
-	LV_ModifyCol(5,"AutoHdr")
+	loop, 5
+		LV_ModifyCol(A_Index,"AutoHdr")
 return
 lv_plugins_click:
 	; get the name and state of the plugin (enabled or disabled)
@@ -1732,7 +1733,7 @@ sub_up:	; fires when the users presses the up-arrow
 		else
 		{
 			Prev := FocusedRowNumber - 1
-			LV_Modify(Prev, "Focus Select")
+			LV_Modify(Prev, "Focus Select Vis")
 		}
 	}
 	f_dbgoutput(gen,dbg,A_LineNumber,3,A_ThisLabel " : " FocusedRowNumber filename)
@@ -1766,7 +1767,7 @@ sub_down:	; fires when the users presses the down-arrow
 		if FocusedRowNumber = 0
 			FocusedRowNumber = 1	; to prevent the first row being selected twice
 		Next := FocusedRowNumber + 1
-		LV_Modify(Next, "Focus Select")
+		LV_Modify(Next, "Focus Select Vis")
 	}
 	f_dbgoutput(gen,dbg,A_LineNumber,3,A_ThisLabel " : " FocusedRowNumber filename)
 return
@@ -1839,7 +1840,7 @@ GUIContextMenu:
 	Menu, Context, Add, %t_statusbar%, GUI_statusbar
 	if GUI_statusbar = 1
 		Menu, Context, Check, %t_statusbar%
-	Menu, Context, Add, %t_titlebar%, GUI_titlebar
+	Menu, Context, Add, %t_titlebar%, GUI_titlebar_context
 	if GUI_titlebar = 1
 		Menu, Context, Check, %t_titlebar%
 
@@ -1886,16 +1887,17 @@ GUI_statusbar:
 		GUIControl, show, status_text 
 	else
 		GUIControl, hide, status_text
-	GUI, Show, AutoSize, %GUI2_name%
+	GUI, Show, AutoSize
 return
+GUI_titlebar_context:
+	Menu, Context, ToggleCheck, %t_statusbar%
 GUI_titlebar:
 	GUI_titlebar := !GUI_titlebar
 	IniWrite, %GUI_titlebar%, %ini_file%, GUI, GUI_titlebar
-	Menu, Context, ToggleCheck, %t_statusbar%
 	if GUI_titlebar = 1
-		GUI +theme +sysmenu +caption 
+		GUI 1: +theme +sysmenu +caption 
 	else
-		GUI -theme -sysmenu -caption +border
+		GUI 1: -theme -sysmenu -caption +border
 return
 GUI_edit:
 	run, edit "%command%" , %command_path% , UseErrorLevel
@@ -2009,22 +2011,24 @@ search:
 	gui, submit, nohide
 	if command_search !=
 		SetTimer, timer_execute_search, -%search_delay% ; Delay after typing stops, to prevent the script from firing prematurely
-	settimer, timer_checkempty
 	if GUI_emptyafter30 = 1
 	{
 		i := 0
 		settimer, timer_emptyafter30, 1000
+		gosub timer_emptyafter30
 	}
+	SetTimer, timer_checkempty
 	if gui_xempty = 1
 		GUIControl,, sub_clear, x
 return
 timer_checkempty:
+	; will resize the GUI if the main edit box is empty
 	gui, submit, nohide
 	if command_search =
 		gosub sub_empty
 return
 timer_emptyafter30:
-	; outputdebug > %i%
+	; will empty the main edit box after 60 seconds of not typing in it
 	if GUI_emptyafter30 = 0
 		settimer, timer_emptyafter30, off
 	i++
@@ -2032,7 +2036,6 @@ timer_emptyafter30:
 	{
 		guicontrol,, command_search,
 		gosub sub_empty
-		settimer, timer_emptyafter30, off
 	}
 return
 sub_empty:
@@ -2043,9 +2046,9 @@ sub_empty:
 		SB_SetText(gui_statustext)
 		SB_SetIcon(icon_search)	; default search icon
 		gosub gui_othersearch
+		SetTimer, timer_checkempty, off
+		SetTimer, timer_emptyafter30, off
 	}
-	SetTimer, timer_checkempty, off
-	SetTimer, timer_emptyafter30, off
 return
 gui_othersearch:
 	GUIControl, hide, hitlist
@@ -2123,9 +2126,10 @@ timer_execute_search:
 	{
 		engine_desc := parse_search_engines(2,search_engine_short)
 		engine_URL := parse_search_engines(3,search_engine_short)
-		engine_search := SubStr(command_search,firstspace + 1)
 		if engine_URL =
 			engine_URL := parse_search_engines(3,search_engine_default)
+		engine_search := SubStr(command_search,firstspace + 1)
+		SB_SetText("Search " . engine_desc . " for: " . engine_search)
 
 		if set_search != 1	; to prevent flickering of the GUI
 		{
@@ -2133,18 +2137,18 @@ timer_execute_search:
 			SB_SetIcon(icon_search)
 		}
 		set_search = 1	; so the command run knows to execute the engine_URL instead of the file
-		SB_SetText("Search " . engine_desc . " for: " . engine_search)
 		f_dbgtime(gen,dbg,A_LineNumber,"timer_execute_search","stop",2)
 		return
 	}
 	else if ( firstchars = "`= " )
 	{
-		if set_calc = 1	; to prevent flickering of the GUI
-			return
-		set_calc = 1
-		GoSub gui_othersearch
-		SB_SetIcon(icon_formula)
-		SB_SetText("Enter calculation")		
+		if set_calc != 1	; to prevent flickering of the GUI
+		{
+			set_calc = 1
+			GoSub gui_othersearch
+			SB_SetIcon(icon_formula)
+			SB_SetText("Enter calculation")
+		}
 		f_dbgtime(gen,dbg,A_LineNumber,"timer_execute_search","stop",2)
 		return
 	}
@@ -2155,57 +2159,58 @@ timer_execute_search:
 		SB_SetIcon(icon_search)	; default search icon
 	}
 
-	/*
-	if command_search contains %command_search_old%	; no search entry, so no need to go further
-	{
-		command_search_old := command_search
-		Loop % LV_GetCount()
-		{
-			LV_GetText(RetrievedText, A_Index, 1)
-			LV_GetText(RetrievedText2, A_Index, 3)
-			if RetrievedText not contains %command_search%
-			{
-				LV_delete(A_Index)  ; Select each row whose first field contains the filter-text.
-				outputdebug Delete %A_Index% "%RetrievedText%" "%RetrievedText2%"
-			}
-		}
-		f_dbgtime(gen,dbg,A_LineNumber,"timer_execute_search","stop",2)
-		return
-	}
-	command_search_old := command_search
-	*/
-
 	newsearch = 1	; this variable is to keep track of the time spent searching
 	search_time_start := A_TickCount
-	
-	if everythingPID = 0
+	/*
+	if(InStr(command_search, command_search_old))
 	{
-		run, %app_everything%,, hide , everythingPID
-		sleep 500	; sleep 500 so everything.exe has time to start
+		results_new :=
+		Loop, parse, results, `n
+		{
+			if(InStr(A_LoopField, command_search))
+			{
+				results_new .= A_LoopField . "`n"
+				; outputdebug incremental search: keep %A_LoopField% (%command_search%)
+			}
+			else
+				outputdebug incremental search: delete %A_LoopField% (%command_search%)
+		}
+		results := results_new
 	}
+	else 
+	*/
+	{
+		command_search_old := command_search
 	
-	; check if the temporary output file exists, if so, delete it
-	ifexist %result_filename%
-		FileDelete %result_filename%
+		if everythingPID = 0
+		{
+			run, %app_everything%,, hide , everythingPID
+			sleep 500	; sleep 500 so everything.exe has time to start
+		}
+		
+		; check if the temporary output file exists, if so, delete it
+		ifexist %result_filename%
+			FileDelete %result_filename%
 
-	f_dbgoutput(gen,dbg,A_LineNumber,3,A_ThisLabel " : runwait " comspec " " debug " """ app_find """ " command_search """ -n " max_results " > " result_filename)
-	f_dbgtime(gen,dbg,A_LineNumber,"app_find","start",2)
-	; the actual search
-	app_pid :=	; clear the variable before use
-	find_text := find_text1
+		f_dbgoutput(gen,dbg,A_LineNumber,3,A_ThisLabel " : runwait " comspec " " debug " """ app_find """ " command_search """ -n " max_results " > " result_filename)
+		f_dbgtime(gen,dbg,A_LineNumber,"app_find","start",2)
+		; the actual search
+		app_pid :=	; clear the variable before use
+		find_text := find_text1
 
-	if use_everything = 1
-	{
-		settimer, timer_check_find	; this timer sleeps 1 second and then starts checking for the existence of the %app_PID%
-		runwait, %comspec% %debug% ""%app_find%" "%command_search%" -n %max_results% > "%result_filename%"" , %A_ScriptDir% , hide, app_PID
+		if use_everything = 1
+		{
+			settimer, timer_check_find	; this timer sleeps 1 second and then starts checking for the existence of the %app_PID%
+			runwait, %comspec% %debug% ""%app_find%" "%command_search%" -n %max_results% > "%result_filename%"" , %A_ScriptDir% , hide, app_PID
+		}
+		else
+		{
+			filelist:=ListMFTfiles(substr(command_search,1,2),substr(command_search,4),"|",true,num)
+			fileappend, %filelist%, %result_filename%
+		}
+		
+		f_dbgtime(gen,dbg,A_LineNumber,"app_find","stop",2)
 	}
-	else
-	{
-		filelist:=ListMFTfiles(substr(command_search,1,2),substr(command_search,4),"|",true,num)
-		fileappend, %filelist%, %result_filename%
-	}
-	
-	f_dbgtime(gen,dbg,A_LineNumber,"app_find","stop",2)
 			
 	; only do this if the user typed something into the edit box to search inside the hits for
 	if search_inside <> 
@@ -2238,6 +2243,7 @@ timer_execute_search:
 	; ifexist %result_filename%
 	; {
 		FileRead , results, %result_filename%
+		; clipboard := results
 		Sort , results , U	; sort and make unique
 		StringReplace, results , results , `r`n, `n, ALL	; needed for the listview
 		f_dbgoutput(gen,dbg,A_LineNumber,3,A_ThisLabel " sorting results")
@@ -2248,7 +2254,7 @@ timer_execute_search:
 	f_dbgtime(gen,dbg,A_LineNumber,"timer_execute_search","stop",2)
 return
 timer_check_find:
-	SB_SetText(find_text . "(ctrl x to cancel)")
+	SB_SetText(find_text . A_Space . cancel_text)
 	; GUIControl,, status_text, %find_text% (ctrl x to cancel)
 	loop
 	{
@@ -2280,6 +2286,9 @@ find_interrupt:
 	app_pid :=
 return
 update_hitlist:	; in a separate subroutine so we can call it when a filter is engaged/disengaged
+	gui, submit, nohide
+	if command_search =
+		return
 	f_dbgtime(gen,dbg,A_LineNumber,"update_hitlist","start",2)
 	GUIControl, 1:-Redraw, Hitlist
 	GoSub sub_empty	; tidy up (hitlist and status-bar)
@@ -2294,7 +2303,7 @@ update_hitlist:	; in a separate subroutine so we can call it when a filter is en
 	; search for hits in the custom_files (in the variable total_custom, that is)
 	GoSub sub_command_guess_custom
 	
-	Loop , parse , results , `n	; Add the results from es.exe (ie: everything.exe)
+	Loop, parse, results , `n	; Add the results from es.exe (ie: everything.exe)
 	{
 		if A_LoopField = Everything IPC service not running.
 		{
@@ -2302,6 +2311,8 @@ update_hitlist:	; in a separate subroutine so we can call it when a filter is en
 			run, %app_everything% -install_service
 			break
 		}
+		if(A_LoopField not contains command_search )
+			continue
 		command_path := A_LoopField
 		SplitPath, command_path , OutFileName, OutDir, OutExtension, OutNameNoExt, OutDrive
 		if OutExtension contains %A_Space%
@@ -2428,6 +2439,7 @@ update_hitlist:	; in a separate subroutine so we can call it when a filter is en
 return
 update_status_text:
 	GoSub select_hitlist
+	LV_ModifyCol(5,0)	; the run/runas column
 	if hide_extensions = 1
 		LV_ModifyCol(2, 0)
 	else
@@ -2468,6 +2480,8 @@ sub_command_guess_custom:
 	custom_list :=	; do it here and not after, because we'll need the list to prevent doubles
 	Loop, parse, total_custom, `n
 	{
+		if ( SubStr(A_LoopField,1,1) = "`;" )		; ignore commented lines in the custom files
+			continue
 		if A_LoopField contains |run	; sends and passwords do not need to be listed in the hitlist
 		{
 			line := A_LoopField
@@ -2494,7 +2508,7 @@ sub_command_guess_custom:
 					hitcounter += 1	; here for the filtered results, this subroutine only gets here if there is no filter applicable
 					GoSub select_hitlist
 					name := name " (custom)"
-					LV_Add("", name, OutExtension, Path, Score)	; Adds the results to the hitlist	<<<< we need to add to this score for history, no? How will we solve this?
+					LV_Add("", name, OutExtension, Path, Score, A_LoopField)	; Adds the results to the hitlist	<<<< we need to add to this score for history, no? How will we solve this?
 					custom_list .= path . ","
 					score :=
 				}
@@ -2568,8 +2582,8 @@ command_run_with:
 	command_run_with = 0
 return
 command_run:
-	settimer, timer_emptyafter30, off
 	gui, submit, nohide
+	; if alt-enter is pressed, run as admin, else, run normally
 	if command_search = "" ; needs to be here in case user presses enter on an empty search command
 	{
 		f_dbgtime(gen,dbg,A_LineNumber,"timer_execute_search","stop",3)
@@ -2577,6 +2591,8 @@ command_run:
 	}
 	if set_search = 1
 	{	
+		engine_search := SubStr(command_search,firstspace + 1)
+		SB_SetText("Search " . engine_desc . " for: " . engine_search)
 		StringReplace, engine_search, engine_search, %A_Space%, `%20, ALL
 		run, % engine_URL . engine_search
 		GoSub sub_clear
@@ -2585,7 +2601,6 @@ command_run:
 	}
 	if set_calc = 1
 	{
-		; calculate
 		StringTrimleft, command_calc, command_search, 2
 		GuiControl,, command_search, % "`= " . eval(command_calc)
 		Send {end}
@@ -2595,9 +2610,11 @@ command_run:
 	else if hitcounter = 0	; in some cases, a file cannot be found, but it can be run (like on Win7: regedit)
 	{
 		if TrayTip = 1
-			TrayTip, Command executed, Starting %command_search%,%traytime%
+			TrayTip, Command executed, % tray_starting . " " . command_search,%traytime%
 		Splitpath, command_search , command_name, command_path, command_ext, command_name_noext
 		RunAsUser(command_search, , command_path)
+		winwaitactive %command_search%
+		winactivate %command_search%
 		f_dbgtime(gen,dbg,A_LineNumber,"timer_execute_search","stop",3)
 		return
 	}
@@ -2607,11 +2624,15 @@ command_run:
 	if FocusedRowNumber = 0		; no row was manually selected, so execute the first row
 		FocusedRowNumber := 1
 
-	LV_GetText(command, FocusedRowNumber, 3)
-	
-	Splitpath, command , command_name, command_path, command_ext, command_name_noext
+	LV_GetText(command, FocusedRowNumber, 3)	; the path
+	LV_GetText(trim(choice), FocusedRowNumber, 5)	; the run choice column
+	if(choice is choice)	; needs trim else "choice" might have a space
+		RunAsAdmin = 1
+	Splitpath, command, command_name, command_path, command_ext, command_name_noext
 
 	gosub sub_getextandrun	; this will see if there's arguments and split them off, it will also run the file with the arguments
+	if choice = runasadmin
+		RunAsAdmin = 0
 return
 timer_autohide:
 	if GUI_autohide = 1
@@ -2850,6 +2871,7 @@ first_time_ok:
 	gosub sub_reload
 return
 ; http://www.autohotkey.com/forum/topic78053.html
+; http://www.autohotkey.com/community/viewtopic.php?t=65768
 RunAsUser(Target, Arguments="", WorkingDirectory="")
 {
    static TASK_TRIGGER_REGISTRATION := 7   ; trigger on registration. 

@@ -23,6 +23,8 @@
 	find_text2 = Searching inside files	
 	cancel_text = (ctrl x to cancel)
 	
+	tray_starting = Starting
+	
 	info_target_icon = Click this icon for some quick settings.
 	info_set_advanced = (Alt-E) Click this to toggle between simple and advanced interface.
 	info_command_search = (Alt-Space) Type your search entry here`, the list below will be populated with the hits.
@@ -94,7 +96,7 @@
 	gui_hidefolders = Hide &Folders
 	gui_ignorelist = &Ignore list
 	gui_restrictedmode = &Restricted mode
-	gui_hitlist = Name|ext|Path|Score
+	gui_hitlist = Name|ext|Path|Score|runas
 	gui_statustext = Fill search field...
 
 	gui2_p1 = Program Options

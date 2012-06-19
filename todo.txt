@@ -4,28 +4,20 @@ TO DO
 -----------------------------
 	short term
 	-------------------------
-	- add engines for search (look for "URL = ")
-	- preferences : titlebar gives error if toggled without the gui1 visible
-	- commented lines from custom showing up?
+	- optimise search so it refines old search results instead of searching anew for every character typed: Fragman: if(InStr(NewQuery, OldQuery))
 	- check password encryption against http://throwingfire.com/storing-passwords-securely/
-	- plugin search for autohotkey : add different sites, like wikipedia and imdb
-	- fix calculator (= )
 	- check hotkeyit for ideas
 		* password: StringCaseSense On
-	- traytip not show path
+	- fix programs not getting auto-focus after starting
 	- split hardcoded text into language vars
 	- create language files
 		* add "change language" subroutine to menu > just reload seems easiest because of gui and menu's
 	- create About GUI
 	- add "action" in GUI (instead of contextmenu) : see demo of nDroid: http://www.codenite.com/demo.html
-	- troubleshoot plugin checker
 	- resize gui
 	- add context menu option to add custom entries (add hotkey option and everything) > only run files, not sends (as those don't show up in the hitlist)
 	- add context menu to add to ignore list
 	- add context menu to remove from ignore list
-	- get rid of all the unnecessary globals
-	- add icons to context menu? (key for admin, icon for linked file, bin for delete, etc)
-	- change search input box to what dropbox has: one box, inside: search icon/revolving thing - text - x to clear
 	- add timestamp to history (so we can prune history entries that are > 30 days old)
 	- use Self Script Updater and make a GUI with URLGet
 	- find a way to hide the trayicon for the plugin tester, maybe get the text of the script and append the #notrayicon line?
@@ -41,49 +33,31 @@ TO DO
 	- history hits do not always show up after switching extensions on when a result is showing
 	- add resizing
 	- positions and stuff based on username?
-	- optimize GUI > take a look at NODE!
-	- check for errors in plugins, if so, disable the plugin with the problem
-	- sub -> function
-	- function -> inc
-	- edit sh_winpad so the hotkeys can be configured in the custom files
+	- edit plugins (like sh_winpad) so the hotkeys can be configured in the custom files
 	- add encryption: http://www.autohotkey.com/community/viewtopic.php?t=25346
-	- add "run with" < problem with RunAsUser
-	- transparent when not active
+	- add option: transparent when not active
 	- do a search trim instead of a new search when the user types instead of backspaces
 	- how does AHK handle double subs in includes? require A_ScriptName in the subs?
+	- splash screen while loading
+	- optimize first run screen
 	- check for missing files, offer to download and unzip, else exitapp
 	- how to execute starting files in an included file
 	- plugins dependable on portable (in scriptdir or in user data)
-	- if hitlist is active, let DEL delete the row via GUI_ADD_delete 
-	- get rid of double hits in hitlist due to history (sort?)
 	- auto-update
 	- check for apps\Everything.db < especially firstrun
-	- uninstall
 	- check for hotkeys that are only one key or one modifier and alert the user
 	- check for double hotkeys
-	- run as admin
+	- add "runasadmin" to custom files
 	- always run as admin
 	- always run custom files as admin
-	- runadmin in custom files
 	- hotkeys for filters / advanced/simple / commandsearch, etc
 	- tips (like: use extension filter or hide folders to speed up the program)
 	- split the extension filters into: - documents (doc*, xls*, txt, rtf, odf, pdf) - configuration (cfg, ini) - images (jpg, tiff, png, bmp, gif) - media (mp3, mp4, flac, ogg) - custom (lnk)
-	- history GUI2 (a la log)
-	- context menu for the listview
-	- refine the preferences GUI
-	- focus on command_search when GUI is shown
-	- add secure password generation module
 	- refine tray menu
 	- refine preferences menu
-	- context for the shorthand icon in the main GUI
-	- add scoring (a la FindAndRunRobot : http://www.donationcoder.com/Software/Mouser/findrun/index.html)
 	- add dragging of files out of the hitlist to copy
 	- allow resizing of the main GUI
 	- allow to select more than one hit (to delete or copy or whatever), NOTE: requires statusbar update
-	- optimise search so it refines old search results instead of searching anew for every character typed
-	- add "start with windows" option (autostart)
-	- fix the statusbar (function_lv_cmd): if the user uses down (sub_down) to get to the listview, the statusbar doesn't show the file info for the first line
-	- fix scrolling in the hitlist using up/down
 	- adjust the logging, too much is logged right now, what is needed for troubleshooting?
 		~ existence of necessary files
 		~ operations (command_search, searching for updates, what else?)
@@ -104,3 +78,4 @@ TO DO
 	- Use FileOpen() instead of FileRead?
 	- add log file to preferences (parse the log and show it in a separate treeview, a la Spent)
 	- add a check for the size of the log file
+	- uninstall
