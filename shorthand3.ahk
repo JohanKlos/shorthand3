@@ -297,7 +297,7 @@ hotkey_run:	; this subroutine is fired when the user presses a hotkey, at which 
 				{
 					if h_choice = runasadmin
 						RunAsAdmin = 1
-					Splitpath, h_command , , command_path, command_ext, command_name_noext
+					Splitpath, h_command,, command_path, command_ext, command_name_noext
 					StringReplace, pressed_hotkey,A_ThisHotkey,+,SHIFT%A_Space%
 					StringReplace, pressed_hotkey,pressed_hotkey,^,CTRL%A_Space%
 					StringReplace, pressed_hotkey,pressed_hotkey,!,ALT%A_Space%
@@ -348,7 +348,7 @@ sub_getextandrun:
 			{
 				tray_path = 1
 				if selected_program =
-					TrayTip, Command executed, % "Starting " ((selected_program = "") ? selected_program : "" ) . run_command . arguments . ( ( command_path <> "" ) ? ((tray_path = 1 ) ? "`nin " . command_path : "") : "" ) , %traytime%
+					TrayTip, Command executed, % "Starting " ((selected_program = "") ? selected_program : "" ) . run_command . arguments . ( ( command_path <> "" ) ? ((tray_path = 1 ) ? "`nin " . command_path : "") : "" ), %traytime%
 				else
 					TrayTip, Command executed, Starting %selected_program% %run_command% %arguments%`nin %command_path%,%traytime%
 					; TrayTip, Command executed, Starting %run_command% %arguments%`nin %command_path%,%traytime%
@@ -358,7 +358,7 @@ sub_getextandrun:
 
 	if command_name_noext =
 	{
-		msgbox , , %app_name% , Error %A_LastError%: %error_2%`n`nFile not found.
+		msgbox,, %app_name%, Error %A_LastError%: %error_2%`n`nFile not found.
 		f_dbgoutput(gen,dbg,A_LineNumber,2,"sub_getextandrun = " run_command " " arguments " in path " command_path)
 	}
 	else
@@ -368,9 +368,9 @@ sub_getextandrun:
 		else if RunAsAdmin = 1
 		{
 			if selected_program <>
-				run, *runAs "%selected_program%" "%run_command%" %arguments% , %command_path% , UseErrorLevel
+				run, *runAs "%selected_program%" "%run_command%" %arguments%, %command_path%, UseErrorLevel
 			else
-				run, *runAs "%run_command%" %arguments% , %command_path% , UseErrorLevel
+				run, *runAs "%run_command%" %arguments%, %command_path%, UseErrorLevel
 		}
 		else
 		{
@@ -432,33 +432,75 @@ menu:
 	}
 	Menu, plugins, Add
 	; this is where any plugin menu's will appear
+
+	Menu, menu_files, Add
 	Menu, Tray, Add, Files, :menu_files	; creates the subfolder "Files"
-	Menu, Tray, Add, Plugins, :plugins	; creates the subsubfolder "plugins"
-	Menu, Tray, Add
+	Menu, menu_files, Add, Plugins, :plugins	; creates the subsubfolder "plugins"
 	if A_IsCompiled <> 1
 	{
-		Menu, Lists, Add, ListHotkeys, list_hotkeys
-		Menu, Lists, Add, KeyHistory, list_KeyHistory
-		Menu, Lists, Add, ListVars, list_vars
-		Menu, Tray, Add, Lists, :lists	; creates the subsubfolder "Lists"
-
 		loop, %A_ScriptDir%\inc\*.ahk
 		{
 			if A_LoopFileName <>
 				Menu, Includes, Add, Open \inc\%A_LoopFileName%, menu_open
 		}
-		Menu, Tray, Add, Includes, :Includes	; creates the subsubfolder "Includes"
-		Menu, Tray, Add
+		Menu, menu_files, Add, Includes, :Includes	; creates the subsubfolder "Includes"
+
+		Menu, menu_files, Add
+		Menu, Lists, Add, ListHotkeys, list_hotkeys
+		Menu, Lists, Add, KeyHistory, list_KeyHistory
+		Menu, Lists, Add, ListVars, list_vars
+		Menu, menu_files, Add, Lists, :lists	; creates the subsubfolder "Lists"
 	}
+	Menu, Tray, Add
 	Menu, Tray, Add, Preferences, GUI2
 	Menu, Tray, Icon, Preferences, %icon_settings%
+	Menu, Tray, Add, Copy Path, sub_copypath_toggle
+	Menu, Tray, Add
 	Menu, Tray, Add, Send feedback, feedback
 	Menu, Tray, Add, About..., about
 	Menu, Tray, Add
 	Menu, Tray, Add, Reload, sub_reload
 	Menu, Tray, Add, Exit, ExitSub
+	gosub sub_copypath_check
 	f_dbgtime(gen,dbg,A_LineNumber,"Menu","stop",1)
 Return
+sub_copypath_check:
+	if use_copypath = 1
+		Menu, Tray, Check, Copy Path
+	else
+		Menu, Tray, UnCheck, Copy Path
+return
+sub_copypath_toggle:
+	ifnotexist %app_folder%\copypath.exe
+	{
+		use_copypath = 0
+		GoSub sub_uninstall_copypath
+	}
+	else
+	{
+		use_copypath := !use_copypath
+		if use_copypath = 1
+			GoSub sub_install_copypath
+		else
+			GoSub sub_uninstall_copypath
+	}
+	IniWrite, %use_copypath%, %ini_file%, General, use_copypath
+return
+sub_install_copypath:
+	Menu, Tray, Check, Copy Path
+	; context menu for all files
+	RegWrite, REG_SZ, HKEY_CLASSES_ROOT, *\Shell\CopyPath\command,, "%app_folder%\copypath.exe" /r "`%1"
+	RegWrite, REG_SZ, HKEY_CLASSES_ROOT, Folder\Shell\CopyPath\command,, "%app_folder%\copypath.exe" /r "`%1"
+	
+	; context menu for all folders
+	RegWrite, REG_SZ, HKEY_LOCAL_MACHINE, *\SOFTWARE\Classes\Directory\shell\CopyPath\command,, "%app_folder%\copypath.exe" /r "`%1"
+	RegWrite, REG_SZ, HKEY_LOCAL_MACHINE, Folder\SOFTWARE\Classes\Directory\shell\CopyPath\command,, "%app_folder%\copypath.exe" /r "`%1"
+return
+sub_uninstall_copypath:
+	Menu, Tray, UnCheck, Copy Path
+	RegDelete, HKEY_CLASSES_ROOT, *\Shell\CopyPath,
+	RegDelete, HKEY_LOCAL_MACHINE, *\SOFTWARE\Classes\Directory\shell\CopyPath,
+return
 list_hotkeys:
 	ListHotkeys
 return
@@ -474,9 +516,9 @@ menu_browse_plugins:
 	else
 		command_path = %A_ScriptDir%\plugins\
 	ifexist %file_browser%
-		run, "%file_browser%" "%command_path%", %command_path% , UseErrorLevel
+		run, "%file_browser%" "%command_path%", %command_path%, UseErrorLevel
 	else
-		run, explore "%command_path%", %command_path% , UseErrorLevel
+		run, explore "%command_path%", %command_path%, UseErrorLevel
 	GoSub sub_errorlevel		; needed so the msgbox contains the right feedback to the user pertaining the error
 return
 menu_open:	; opens a certain file
@@ -511,21 +553,27 @@ checks:
 	{
 		ifnotexist %app_find%
 		{
-			msgbox , 4, %app_name% %app_version%, Essential file not found, click yes to download the necessary files (es.exe and everything.exe) to "%app_folder%\".
+			msgbox, 4, %app_name% %app_version%, Essential file not found, click yes to download the necessary files (es.exe and everything.exe) to "%app_folder%\".
 			ifmsgbox Yes
 			{
 				ifnotexist %app_folder%
 					FileCreateDir %app_folder%
 				ifnotexist %app_find%
-					URLDownloadToFile , http://www.voidtools.com/es.exe , %app_find%
+					URLDownloadToFile, http://www.voidtools.com/es.exe, %app_find%
 				ifnotexist %app_everything%
-					URLDownloadToFile , http://www.voidtools.com/Everything-1.2.1.371.exe , %app_everything%
+					URLDownloadToFile, http://www.voidtools.com/Everything-1.2.1.371.exe, %app_everything%
 			}
 			exitapp
 		}
 	}
 	if check_for_updates_on_startup = 1
 		GoSub check_update_automatic
+	ifnotexist %app_folder%\copypath.exe
+	{
+		GoSub sub_uninstall_copypath
+		use_copypath = 0
+		IniWrite, %use_copypath%, %ini_file%, General, use_copypath
+	}
 	f_dbgtime(gen,dbg,A_LineNumber,"Checks","stop",1)
 Return
 
@@ -538,7 +586,7 @@ GUI:
 	if GUI_autohide = 1
 		SetTimer timer_autohide, 1000
 	
-	ifwinexist , %GUI_name%	; if the GUI already exists, just show it and do nothing else
+	ifwinexist, %GUI_name%	; if the GUI already exists, just show it and do nothing else
 	{
 		GoSub GUI_show
 		f_dbgtime(gen,dbg,A_LineNumber,"GUI","stop",1)
@@ -577,7 +625,7 @@ GUI:
 	}
 	gui_xempty = 0
 	if gui_xempty = 1
-		GUI Add, Text, ys h17 w10 y8 vsub_clear ggui_xempty left , x	
+		GUI Add, Text, ys h17 w10 y8 vsub_clear ggui_xempty left, x	
 	; row one of the main GUI (the simple portion, the command_search editbox, toggle simple/advanced and the settings)
 	GUIControl, focus, command_search
 	if advanced_border = 1
@@ -604,11 +652,11 @@ GUI:
 	GUI Add, Text, x30 ys w60 r1 vfilter_folders_text gset_filter_folders_text %advanced_status%, %gui_hidefolders%
 	
 	; filter_ignores lets the user decide to not show files with certain words
-	GUI Add, Checkbox, ys w16 h16 vfilter_ignores gset_filter_ignores Checked%filter_ignores% %advanced_status% , 
+	GUI Add, Checkbox, ys w16 h16 vfilter_ignores gset_filter_ignores Checked%filter_ignores% %advanced_status%, 
 	GUI Add, Text, ys w80 r1 vfilter_ignores_text gset_filter_ignores_text %advanced_status%, %gui_ignorelist%
 
 	; restricted_mode lets the user only show hits in certain folder (pinned/startmenu/desktop)
-	GUI Add, Checkbox, ys w16 h16 vrestricted_mode gset_restricted_mode Checked%restricted_mode% %advanced_status% , 
+	GUI Add, Checkbox, ys w16 h16 vrestricted_mode gset_restricted_mode Checked%restricted_mode% %advanced_status%, 
 	GUI Add, Text, ys w80 r1 vrestricted_mode_text gset_restricted_mode_text %restricted_mode%, %gui_restrictedmode%
 	
 	; the listbox which will hold the results
@@ -780,7 +828,7 @@ GUI2:	; the GUI with the preferences and settings
 	GUI 2:+owner1  ; Will make it so preferences is always on top of the main GUI. This line has to be before any "GUI, 2:Add" is done, and after GUI 1: has been created.
 	GUI 2:-alwaysontop
 	
-	ifwinexist , %GUI2_name%	; if the GUI already exists, just show it and do nothing else
+	ifwinexist, %GUI2_name%	; if the GUI already exists, just show it and do nothing else
 	{
 		GUI, 2:Show, AutoSize, %GUI2_name%
 		f_dbgtime(gen,dbg,A_LineNumber,"GUI2","stop",1)
@@ -911,7 +959,7 @@ GUI2:	; the GUI with the preferences and settings
 	GoSub lv_hotkeys_fill
 	GUI 2:Add, Text, xp yp+180 w440 vhotkeys_text hidden, Enter or edit hotkey lines below.
 
-	GUI 2:Add, Text, xp yp+25 w50 vc_name_text hidden , Name
+	GUI 2:Add, Text, xp yp+25 w50 vc_name_text hidden, Name
 	GUI 2:Add, Edit, xp+60 yp-3 w315 vc_name gc_update hidden, 
 	GUI 2:Add, Button, xp+325 yp w50 vlv_hotkeys_Edit2 glv_hotkeys_Edit disabled hidden, Edit
 
@@ -1075,7 +1123,7 @@ lv_hotkeys_fill:
 	; list_hotkeys
 	Loop, parse, lv_hotkeys_list, `n, `r 
 	{
-		Loop , parse, A_LoopField , |
+		Loop, parse, A_LoopField, |
 		{
 			if A_Index = 1
 				c_name := A_LoopField
@@ -1209,7 +1257,7 @@ lv_custom_files_fill:
 			continue	; ignore empty vars
 		else
 		{
-			Splitpath, custom_file_%A_Index% , command_name, command_path, command_ext	
+			Splitpath, custom_file_%A_Index%, command_name, command_path, command_ext	
 			LV_Add("", "custom_file_" A_Index, custom_file_%A_Index%)	; Adds the results to the hitlist
 		}
 	}
@@ -1251,9 +1299,9 @@ lv_custom_file_edit:
 	if command =
 		return
 	if text_editor <>
-		run, "%text_editor%" "%command%" , %command% , UseErrorLevel
+		run, "%text_editor%" "%command%", %command%, UseErrorLevel
 	else
-		run, edit "%command%" , %command% , UseErrorLevel	; this should use the system default
+		run, edit "%command%", %command%, UseErrorLevel	; this should use the system default
 	GoSub sub_errorlevel		; needed so the msgbox contains the right feedback to the user pertaining the error
 return
 lv_custom_file_remove:
@@ -1281,7 +1329,7 @@ lv_custom_file_remove:
 		if custom_file_%A_Index% = %command%	; which custom_file is it?
 		{
 			; delete the line from the ini file
-			IniDelete , %ini_file% , Files , %custom_key%
+			IniDelete, %ini_file%, Files, %custom_key%
 			break	; we found it, so the loop can be broken
 		}
 	}
@@ -1303,9 +1351,9 @@ sub_log_parse:
 	ifexist %log_file%
 	{
 		LV_Delete() ; empty the listview
-		Loop , read , %log_file%
+		Loop, read, %log_file%
 		{
-			Loop , parse, A_LoopReadLine , |
+			Loop, parse, A_LoopReadLine, |
 			{
 				if A_LoopReadLine <>
 				{
@@ -1313,7 +1361,7 @@ sub_log_parse:
 					; Add an iteration of the names?
 					If A_Index = 1
 					{
-						StringReplace, date, A_LoopField, `r, , All	; needed?
+						StringReplace, date, A_LoopField, `r,, All	; needed?
 						FormatTime 	, year, %date%, yyyy
 						FormatTime 	, month, %date%, MM
 						FormatTime 	, day, %date%, dd
@@ -1329,7 +1377,7 @@ sub_log_parse:
 						mode := A_LoopField
 					if A_Index = 6
 					{
-						StringReplace, output, A_LoopField, `r, , All
+						StringReplace, output, A_LoopField, `r,, All
 						name = [%mode% - %iteration%] %output%
 						LV_Add("",date,name)	; Adds the name to the day in question
 					}
@@ -1360,7 +1408,6 @@ sub_autostart_toggle:
 	Else
 		GoSub sub_autostart_on
 	IniWrite, %autostart%, %ini_file%, general, autostart
-	; GoSub sub_checks ; to check menu and such
 return
 sub_autostart_on:
 	; check if a lnk already exists
@@ -1368,7 +1415,7 @@ sub_autostart_on:
 	{
 		; if yes:
 		; Add something to check if the path is correct in the lnk
-		FileGetShortcut, %A_Startup%\%app_name%.lnk , OutTarget
+		FileGetShortcut, %A_Startup%\%app_name%.lnk, OutTarget
 		if OutTarget <> %A_ScriptFullPath%
 		{
 			; the path is NOT correct:
@@ -1397,7 +1444,7 @@ sub_autostart_on:
 	IfExist %A_Startup%\%app_name%.lnk
 	{
 		; lnk exists, get outTarget
-		FileGetShortcut, %A_Startup%\%app_name%.lnk , OutTarget
+		FileGetShortcut, %A_Startup%\%app_name%.lnk, OutTarget
 		;if OutTarget = %A_ScriptFullPath%
 		;	msgbox,, %app_name% %app_version%, Successfully Added %app_name% to the startup routine (%A_Startup%\%app_name%.lnk)
 		autostart = 1
@@ -1409,7 +1456,7 @@ sub_autostart_on:
 	}
 Return
 sub_autostart_off:
-	FileGetShortcut, %A_Startup%\%app_name%.lnk , OutTarget
+	FileGetShortcut, %A_Startup%\%app_name%.lnk, OutTarget
 	FileDelete, %A_Startup%\%app_name%.lnk
 	IfNotExist %A_Startup%\%app_name%.lnk
 	{
@@ -1504,7 +1551,7 @@ set_list_ignores:
 	GUI, 2:submit, nohide
 	; this subroutine saves the changes in the ignorelist to the ini_file
 	stringreplace, list_ignores, list_ignores, `n,`,, ALL
-	stringreplace, list_ignores, list_ignores, `,`, , `, , ALL	
+	stringreplace, list_ignores, list_ignores, `,`,, `,, ALL	
 	if command_search <>
 		GoSub update_hitlist
 	IniWrite, % %A_GUIControl%, %ini_file%, GUI, % A_GUIcontrol
@@ -1774,23 +1821,18 @@ return
 
 GUIContextMenu:
 	f_dbgtime(gen,dbg,A_LineNumber,"GUIContextMenu","start",2)
+	if context = 1	; has to be like this, else if the user right-clicks an item, the dividers stay put
+		Menu, Context, DeleteAll	; empties the context menu, else you'd get double entries
+	context = 1
 	if A_EventInfo > 0	; the main window (GUI1) was right-clicked on a file, first give file-specific options
 	{
 		selected_row := A_EventInfo
 		; collect data from which line was right-clicked
 		LV_GetText(command_name,selected_row,1)
 		LV_GetText(command,selected_row,3)
-		Splitpath, command , , command_path, command_ext
+		Splitpath, command,, command_path, command_ext
 
 		Menu, Context, Add, %t_cmd_open%, command_run
-/*
-		if command contains .exe
-		{
-			Menu, Context, Icon, %t_cmd_open%, %command%
-			Menu, Context, Icon, %t_cmd_openwith%, %command% ; a questionmark?
-			Menu, Context, Icon, %t_cmd_openwitharg%, %command% ; a different question mark with a white sheet behind it?
-		}
-*/
 		Menu, Context, Default, %t_cmd_open%
 		Menu, Context, Add, %t_cmd_openwith%, command_run_with
 		Menu, Context, Add, %t_cmd_openwitharg%, command_run_args
@@ -1825,7 +1867,7 @@ GUIContextMenu:
 		Menu, Context, Add, %t_cmd_properties%, GUI_Add_properties
 		Menu, Context, Add, %t_cmd_browse%, GUI_Add_browse
 		Menu, Context, Icon, %t_cmd_browse%, Shell32.dll, 4
-		Menu, Context, Add,
+		Menu, Context, Add, 
 	}
 
 	Menu, Context, Add, %t_alwaysontop%, GUI_alwaysontop
@@ -1849,12 +1891,17 @@ GUIContextMenu:
 	Menu, Context, Add, %t_preferences%, GUI2
 	Menu, Context, Icon, %t_preferences%, %icon_settings%
 	; Menu, Context, Icon, %t_preferences%, Shell32.dll, 177 ; 36
-	Menu, Context, Add, 
+	Menu, Context, Add,
+	Menu, Context, Add, empty, ddel
 	Menu, Context, Add, %t_reload%, sub_reload
 	Menu, Context, Add, %t_exit%, ExitSub
-	Menu, Context, Show, %A_GUIX%, %A_GUIY%	
+	Menu, Context, Show, %A_GUIX%, %A_GUIY%
 	Menu, Context, DeleteAll	; empties the context menu, else you'd get double entries
+	context = 0
 	f_dbgtime(gen,dbg,A_LineNumber,"GUIContextMenu","stop",2)
+return
+ddel:
+	Menu, Context, DeleteAll
 return
 GUI_easymove:
 	GUI_easymove := !GUI_easymove
@@ -1900,19 +1947,19 @@ GUI_titlebar:
 		GUI 1: -theme -sysmenu -caption +border
 return
 GUI_edit:
-	run, edit "%command%" , %command_path% , UseErrorLevel
+	run, edit "%command%", %command_path%, UseErrorLevel
 	GoSub sub_errorlevel		; needed so the msgbox contains the right feedback to the user pertaining the error
 return
 GUI_def_edit:
-	run, "%text_editor%" "%command%" , %command_path% , UseErrorLevel
+	run, "%text_editor%" "%command%", %command_path%, UseErrorLevel
 	GoSub sub_errorlevel		; needed so the msgbox contains the right feedback to the user pertaining the error
 return
 GUI_def_gfx:
-	run, "%graphics_editor%" "%command%" , %command_path% , UseErrorLevel
+	run, "%graphics_editor%" "%command%", %command_path%, UseErrorLevel
 	GoSub sub_errorlevel		; needed so the msgbox contains the right feedback to the user pertaining the error
 return
 GUI_def_fbrowse:
-	run, "%file_browser%" "%command%" , %command_path% , UseErrorLevel
+	run, "%file_browser%" "%command%", %command_path%, UseErrorLevel
 	GoSub sub_errorlevel		; needed so the msgbox contains the right feedback to the user pertaining the error
 return
 GUI_Add_copypath:
@@ -2002,9 +2049,9 @@ GUI_Add_properties:
 return
 GUI_Add_browse:
 	ifexist %file_browser%
-		run, "%file_browser%" "%command_path%", %command_path% , UseErrorLevel
+		run, "%file_browser%" "%command_path%", %command_path%, UseErrorLevel
 	else
-		run, explore "%command_path%", %command_path% , UseErrorLevel
+		run, explore "%command_path%", %command_path%, UseErrorLevel
 	GoSub sub_errorlevel		; needed so the msgbox contains the right feedback to the user pertaining the error
 return
 search:
@@ -2184,7 +2231,7 @@ timer_execute_search:
 	
 		if everythingPID = 0
 		{
-			run, %app_everything%,, hide , everythingPID
+			run, %app_everything%,, hide, everythingPID
 			sleep 500	; sleep 500 so everything.exe has time to start
 		}
 		
@@ -2201,7 +2248,7 @@ timer_execute_search:
 		if use_everything = 1
 		{
 			settimer, timer_check_find	; this timer sleeps 1 second and then starts checking for the existence of the %app_PID%
-			runwait, %comspec% %debug% ""%app_find%" "%command_search%" -n %max_results% > "%result_filename%"" , %A_ScriptDir% , hide, app_PID
+			runwait, %comspec% %debug% ""%app_find%" "%command_search%" -n %max_results% > "%result_filename%"", %A_ScriptDir%, hide, app_PID
 		}
 		else
 		{
@@ -2220,7 +2267,7 @@ timer_execute_search:
 			ifexist C:\WINDOWS\system32\findstr.exe
 				FileCopy C:\WINDOWS\system32\findstr.exe, %app_findstr%
 			else
-				msgbox, , %app_name% %app_version%, %error_findstr_not_found%
+				msgbox,, %app_name% %app_version%, %error_findstr_not_found%
 		}
 		; check if the temporary (filtered) output file exists, if so, delete it
 		ifexist %result_filename2%
@@ -2232,7 +2279,7 @@ timer_execute_search:
 		app_pid :=	; clear the variable before use
 		find_text := find_text2
 		settimer, timer_check_find	; this timer sleeps 1 second and then starts checking for the existence of the %app_PID%
-		runwait, %comspec% %debug% ""%app_findstr%" /M /I /F:"%result_filename%" "%search_inside%" > "%result_filename2%"" , %A_ScriptDir% , hide, app_PID
+		runwait, %comspec% %debug% ""%app_findstr%" /M /I /F:"%result_filename%" "%search_inside%" > "%result_filename2%"", %A_ScriptDir%, hide, app_PID
 		
 		f_dbgtime(gen,dbg,A_LineNumber,"app_findstr","stop",2)
 		FileDelete %result_filename%
@@ -2242,10 +2289,10 @@ timer_execute_search:
 	; now read the (filtered) outputfile to a variable 
 	; ifexist %result_filename%
 	; {
-		FileRead , results, %result_filename%
+		FileRead, results, %result_filename%
 		; clipboard := results
-		Sort , results , U	; sort and make unique
-		StringReplace, results , results , `r`n, `n, ALL	; needed for the listview
+		Sort, results, U	; sort and make unique
+		StringReplace, results, results, `r`n, `n, ALL	; needed for the listview
 		f_dbgoutput(gen,dbg,A_LineNumber,3,A_ThisLabel " sorting results")
 		GoSub update_hitlist		; this parses the results for the hitlist
 	; }
@@ -2303,7 +2350,7 @@ update_hitlist:	; in a separate subroutine so we can call it when a filter is en
 	; search for hits in the custom_files (in the variable total_custom, that is)
 	GoSub sub_command_guess_custom
 	
-	Loop, parse, results , `n	; Add the results from es.exe (ie: everything.exe)
+	Loop, parse, results, `n	; Add the results from es.exe (ie: everything.exe)
 	{
 		if A_LoopField = Everything IPC service not running.
 		{
@@ -2314,7 +2361,7 @@ update_hitlist:	; in a separate subroutine so we can call it when a filter is en
 		if(A_LoopField not contains command_search )
 			continue
 		command_path := A_LoopField
-		SplitPath, command_path , OutFileName, OutDir, OutExtension, OutNameNoExt, OutDrive
+		SplitPath, command_path, OutFileName, OutDir, OutExtension, OutNameNoExt, OutDrive
 		if OutExtension contains %A_Space%
 			OutExtension3 := SubStr(OutExtension,1,Instr(OutExtension,A_Space))
 		if show_lnk = 0
@@ -2374,12 +2421,15 @@ update_hitlist:	; in a separate subroutine so we can call it when a filter is en
 				if A_LoopField contains %list_ignores% ; whenever Var contains one of the list items as a substring
 					OutFileName .= " (ignored)"
 			}
-			if restricted_mode = 1
+			if OutDir contains %list_restricted% ; contains %command_search%
 			{
-				if A_LoopField not contains %restricted_list% ; whenever Var contains one of the list items as a substring
+				outputdebug % outdir . " : " . list_restricted
+				if use_score = 1
+					score += score_restricted
+				if restricted_mode = 1
 				{
 					missrestricted += 1
-					f_dbgoutput(gen,dbg,A_LineNumber,4,"update_hitlist: restricted mode is on, a string was found outside the restricted folders: " restricted_list )
+					f_dbgoutput(gen,dbg,A_LineNumber,4,"update_hitlist: restricted mode is on, a string was found outside the restricted folders: " list_restricted )
 					continue
 				}
 			}
@@ -2395,7 +2445,8 @@ update_hitlist:	; in a separate subroutine so we can call it when a filter is en
 					if InStr(history,OutDir . "\" . OutFileName) ; contains %command_search%
 					{
 						OutFileName = %OutFileName% (history)
-						score := score_history
+						if use_score = 1
+							score += score_history
 					}
 				}
 			}
@@ -2496,7 +2547,7 @@ sub_command_guess_custom:
 				else if A_Index = 2	; the path
 				{
 					path := A_LoopField
-					SplitPath, path , OutFileName, OutDir, OutExtension, OutNameNoExt, OutDrive
+					SplitPath, path, OutFileName, OutDir, OutExtension, OutNameNoExt, OutDrive
 				}
 				else if A_Index = 3	; the hotkey
 				{
@@ -2540,7 +2591,7 @@ sub_lv_cmd:
 			LV_GetText(command,FocusedRowNumber,3)
 			if command_name <> name
 			{
-				FileGetSize, command_size , %command%, K
+				FileGetSize, command_size, %command%, K
 				if command_size <>
 					text =  %command_size% KB
 				FileGetTime, FileTime, %command%
@@ -2552,7 +2603,7 @@ sub_lv_cmd:
 		}
 		else
 			text = %text_search_time%
-		; GUIControl, , status_text , %text%
+		; GUIControl,, status_text, %text%
 		SB_SetText(text)
 	}
 	f_dbgtime(gen,dbg,A_LineNumber,"sub_lv_cmd","stop",3)
@@ -2567,7 +2618,7 @@ getprogram(command_ext)
 	return selected_program
 }
 command_run_args:
-	InputBox, arguments, %app_name%: Run with arguments, Type the arguments you want to run the program with, , 400, 130, , , , , 
+	InputBox, arguments, %app_name%: Run with arguments, Type the arguments you want to run the program with,, 400, 130,,,,, 
 	gosub command_run
 return
 command_run_admin:
@@ -2577,7 +2628,7 @@ command_run_admin:
 return
 command_run_with:
 	command_run_with = 1
-	FileSelectFile, selected_program,3, , %GUI_Name% : Select file	to open with...
+	FileSelectFile, selected_program,3,, %GUI_Name% : Select file	to open with...
 	gosub command_run
 	command_run_with = 0
 return
@@ -2611,8 +2662,8 @@ command_run:
 	{
 		if TrayTip = 1
 			TrayTip, Command executed, % tray_starting . " " . command_search,%traytime%
-		Splitpath, command_search , command_name, command_path, command_ext, command_name_noext
-		RunAsUser(command_search, , command_path)
+		Splitpath, command_search, command_name, command_path, command_ext, command_name_noext
+		RunAsUser(command_search,, command_path)
 		winwaitactive %command_search%
 		winactivate %command_search%
 		f_dbgtime(gen,dbg,A_LineNumber,"timer_execute_search","stop",3)
@@ -2660,21 +2711,21 @@ sub_errorlevel:
 	if A_LastError <> 0
 	{
 		if A_LastError = 2
-			msgbox , , %app_name% , Error %A_LastError%: %error_2%`n`n"%command%" in "%command_path%"
+			msgbox,, %app_name%, Error %A_LastError%: %error_2%`n`n"%command%" in "%command_path%"
 		if A_LastError = 3
-			msgbox , , %app_name% , Error %A_LastError%: %error_3%`n`n"%command%" in "%command_path%"
+			msgbox,, %app_name%, Error %A_LastError%: %error_3%`n`n"%command%" in "%command_path%"
 		if A_LastError = 4
-			msgbox , , %app_name% , Error %A_LastError%: %error_4%`n`n"%command%" in "%command_path%"
+			msgbox,, %app_name%, Error %A_LastError%: %error_4%`n`n"%command%" in "%command_path%"
 		if A_LastError = 5
-			msgbox , , %app_name% , Error %A_LastError%: %error_5%`n`n"%command%" in "%command_path%"
+			msgbox,, %app_name%, Error %A_LastError%: %error_5%`n`n"%command%" in "%command_path%"
 		if A_LastError = 15
-			msgbox , , %app_name% , Error %A_LastError%: %error_15%`n`n"%command%" in "%command_path%"
+			msgbox,, %app_name%, Error %A_LastError%: %error_15%`n`n"%command%" in "%command_path%"
 		if A_LastError = 21
-			msgbox , , %app_name% , Error %A_LastError%: %error_21%`n`n"%command%" in "%command_path%"
+			msgbox,, %app_name%, Error %A_LastError%: %error_21%`n`n"%command%" in "%command_path%"
 		if A_LastError = 25
-			msgbox , , %app_name% , Error %A_LastError%: %error_25%`n`n"%command%" in "%command_path%"
+			msgbox,, %app_name%, Error %A_LastError%: %error_25%`n`n"%command%" in "%command_path%"
 		if A_LastError = 1155
-			msgbox , , %app_name% , Error %A_LastError%: %error_1155%`n`n"%command%" in "%command_path%"
+			msgbox,, %app_name%, Error %A_LastError%: %error_1155%`n`n"%command%" in "%command_path%"
 	}
 return
 check_update_manual:
@@ -2726,7 +2777,7 @@ feedback:
 	Run, mailto:maestr0@gmx.net?subject=%app_name% %app_version% feedback
 return
 about:
-	msgbox , , %app_name% %app_version%, %text_about%
+	msgbox,, %app_name% %app_version%, %text_about%
 return
 first_time_gui:
 	GUI, 3:Add, Text, section, %gui3_preferences%
@@ -2911,7 +2962,7 @@ RunAsUser(Target, Arguments="", WorkingDirectory="")
    objSettings.ExecutionTimeLimit := "PT0S"
    objSettings.DisallowStartIfOnBatteries := False
    objSettings.StopIfGoingOnBatteries := False
-   objFolder.RegisterTaskDefinition("", objTaskDefinition, TASK_CREATE , "", "", TASK_LOGON_INTERACTIVE_TOKEN ) 
+   objFolder.RegisterTaskDefinition("", objTaskDefinition, TASK_CREATE, "", "", TASK_LOGON_INTERACTIVE_TOKEN ) 
 }
 GUICLOSE:
 GUIESCAPE:

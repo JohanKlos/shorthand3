@@ -1,5 +1,5 @@
 /*
-	string := "124934412"
+	string := "12345678"
 	password := "007"
 	hash := Crypt.Encrypt.StrEncrypt(string,password,5,1) ; encrypts string using AES_128 encryption and MD5 hash
 	clipboard := hash

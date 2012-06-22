@@ -4,17 +4,20 @@ TO DO
 -----------------------------
 	short term
 	-------------------------
+	- fix programs not getting auto-focus after starting < issue in RunAsUser function
 	- optimise search so it refines old search results instead of searching anew for every character typed: Fragman: if(InStr(NewQuery, OldQuery))
 	- check password encryption against http://throwingfire.com/storing-passwords-securely/
 	- check hotkeyit for ideas
 		* password: StringCaseSense On
-	- fix programs not getting auto-focus after starting
+	
 	- split hardcoded text into language vars
 	- create language files
 		* add "change language" subroutine to menu > just reload seems easiest because of gui and menu's
 	- create About GUI
 	- add "action" in GUI (instead of contextmenu) : see demo of nDroid: http://www.codenite.com/demo.html
+	
 	- resize gui
+	- optimise menu
 	- add context menu option to add custom entries (add hotkey option and everything) > only run files, not sends (as those don't show up in the hitlist)
 	- add context menu to add to ignore list
 	- add context menu to remove from ignore list

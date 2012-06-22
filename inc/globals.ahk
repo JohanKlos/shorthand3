@@ -68,6 +68,7 @@ Read_ini:
 	IniRead, update_interval, %ini_file%, General, update_interval, 600000 ; how often to scan for updates (default: every hour)
 	IniRead, autostart, %ini_file%, General, autostart, 0					; places a link in the startup menu of the current user
 	IniRead, max_custom, %ini_file%, General, max_custom, 20				; the maximum number of custom_files it'll look for
+	IniRead, use_copypath, %ini_file%, General, use_copypath, 1				; if 1, the registry will be edited so CopyPath gets added to context menu of all files and folders
 	
 	IniRead, search_engine_default, %ini_file%, General, search_engine_default, 	; the default short search engine, if the input is unclear, this is what it defaults to
 	if search_engine_default = ERROR
@@ -85,11 +86,6 @@ Read_ini:
 	IniRead, GUI_h, %ini_file%, GUI, GUI_h, 127								; height for the main GUI
 
 	IniRead, search_delay, %ini_file%, GUI, search_delay, 250				; delay before searching to prevent searching at every keystroke
-
-	IniRead, use_history, %ini_file%, GUI, use_history, 1					; 1 : keep track of what is opened/run with shorthand, allows scoring and combobox in GUI
-	IniRead, use_score, %ini_file%, GUI, use_score, 0						; 1 : use scoring to change the hitlist
-	IniRead, score_history, %ini_file%, Score, score_history, 100			; files in log_history appear at the top of the hitlist
-	IniRead, score_custom, %ini_file%, Score, score_custom, 150				; "run" files in a custom_file
 
 	IniRead, text_editor_ext, %ini_file%, GUI, text_editor_ext, %A_Space%	; list of extensions to open with the specified text editor
 	if text_editor_ext =
@@ -112,12 +108,17 @@ Read_ini:
 	if list_ignores =
 		list_ignores = prefetch,cache
 
+	IniRead, use_history, %ini_file%, GUI, use_history, 1					; 1 : keep track of what is opened/run with shorthand, allows scoring and combobox in GUI
+	IniRead, use_score, %ini_file%, GUI, use_score, 1						; 1 : use scoring to change the sorting of the hitlist
+	IniRead, score_restricted, %ini_file%, Score, score_restricted, 50		; "run" files in a start menu or desktop 
+	IniRead, score_history, %ini_file%, Score, score_history, 100			; files in log_history get (by default) 100 score points (hitlist shows in descending order)
+	IniRead, score_custom, %ini_file%, Score, score_custom, 150				; "run" files in a custom_file
+
 	IniRead, show_lnk, %ini_file%, GUI, show_lnk, 1							; when 0, the results will show the path to the actual file, instead of the .lnk filename
 
 	IniRead, restricted_mode, %ini_file%, GUI, restricted_mode, 1			; 1 means it'll only show hits in one of the restricted folders
-	A_TaskbarPinned = %AppData%\Microsoft\Internet Explorer\Quick Launch\User Pinned\TaskBar
-	restricted_list = %A_Desktop%,%A_DesktopCommon%,%A_StartMenu%,%A_StartMenuCommon%,%A_TaskbarPinned%
-
+	A_TaskbarPinned = %A_AppData%\Microsoft\Internet Explorer\Quick Launch\User Pinned\TaskBar
+	list_restricted = %A_Desktop%,%A_DesktopCommon%,%A_StartMenu%,%A_StartMenuCommon%,%A_TaskbarPinned%
 	
 	IniRead, GUI_ontop, %ini_file%, GUI, GUI_ontop, 1						; if 1 the search window will be always on top when not hidden
 	IniRead, GUI_fade, %ini_file%, GUI, GUI_fade, 0							; if 1 fades the search window in and out
