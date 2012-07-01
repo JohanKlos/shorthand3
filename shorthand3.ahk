@@ -2057,6 +2057,7 @@ GUI_Add_browse:
 return
 search:
 	gui, submit, nohide
+	gosub search_first
 	if command_search !=
 		SetTimer, timer_execute_search, -%search_delay% ; Delay after typing stops, to prevent the script from firing prematurely
 	if GUI_emptyafter30 = 1
@@ -2092,7 +2093,7 @@ sub_empty:
 	if command_search =
 	{
 		SB_SetText(gui_statustext)
-		outputdebug >> %gui_statustext%
+		outputdebug %A_LineNumber% >> %gui_statustext%
 		SB_SetIcon(icon_search)	; default search icon
 		gosub gui_othersearch
 		SetTimer, timer_checkempty, off
@@ -2149,13 +2150,9 @@ parse_search_engines(entry,desc="")
 		StringTrimRight, engine, engine, 1
 	return engine
 }
-timer_execute_search:
-	Hotkey, ^x, find_interrupt
-	; previously GUI_fill_results
-	; this subroutine is where the script actually starts to search
-	f_dbgtime(gen,dbg,A_LineNumber,"timer_execute_search","start",2)
+search_first:
+	; this routine will get the first information of the search entry
 	GUI, Submit, NoHide	; retrieve the variables from the GUI
-	
 	firstchar := Substr(command_search,1,1)
 	firstchars := Substr(command_search,1,2)
 	firstspace := InStr(command_search,A_Space)
@@ -2207,6 +2204,15 @@ timer_execute_search:
 		set_search = 0
 		SB_SetIcon(icon_search)	; default search icon
 	}
+return
+timer_execute_search:
+	if ( set_calc != 0 ) or ( set_search != 0 )
+		return
+	Hotkey, ^x, find_interrupt
+	; previously GUI_fill_results
+	; this subroutine is where the script actually starts to search
+	f_dbgtime(gen,dbg,A_LineNumber,"timer_execute_search","start",2)
+	GUI, Submit, NoHide	; retrieve the variables from the GUI
 
 	newsearch = 1	; this variable is to keep track of the time spent searching
 	search_time_start := A_TickCount
@@ -2654,7 +2660,8 @@ command_run:
 	if set_calc = 1
 	{
 		StringTrimleft, command_calc, command_search, 2
-		GuiControl,, command_search, % "`= " . eval(command_calc)
+		; great thanks to Berban for the RegExReplace
+		GuiControl,, command_search, % "`= " . RegExReplace(0 eval(command_calc), "^(?(?=[^.]*[1-9])0|(0))\s*(?(?=.*[1-9])(-?)|-?)\s*0*(\d*(?=(\.0*)?\s*$)|\d*\.\d*[1-9])\.?0*\s*$", "$2$1$3")
 		Send {end}
 		f_dbgtime(gen,dbg,A_LineNumber,"timer_execute_search","stop",2)
 		return
