@@ -4,7 +4,6 @@ TO DO
 -----------------------------
 	short term
 	-------------------------
-	- fix programs not getting auto-focus after starting < issue in RunAsUser function
 	- optimise search so it refines old search results instead of searching anew for every character typed: Fragman: if(InStr(NewQuery, OldQuery))
 	- check password encryption against http://throwingfire.com/storing-passwords-securely/
 	- check hotkeyit for ideas

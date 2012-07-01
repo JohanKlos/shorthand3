@@ -25,6 +25,7 @@ f_dbgtime(gen,dbg,A_LineNumber,"Bootup","start",0) ; sub_time shows in outputdeb
 	#include %A_ScriptDir%\inc\history.ahk			; history functions for executed functions
 	#include %A_ScriptDir%\inc\plugin.ahk			; sorts plugin checking and loading
 	#include %A_ScriptDir%\inc\Calc.ahk			; takes care of the calculator function (enter "= " in the search window)
+	#include %A_ScriptDir%\inc\ShellRun.ahk		; to run programs non-elevated (because the script needs to run elevated, everything it runs will by default be elevated too)
 
 	Plugins()
 	read_ini()
@@ -374,7 +375,7 @@ sub_getextandrun:
 		}
 		else
 		{
-			RunAsUser(run_command, Arguments, command_path)
+			ShellRun(run_command, Arguments, command_path)
 		}
 		GoSub sub_errorlevel		; needed so the msgbox contains the right feedback to the user pertaining the error
 		f_dbgoutput(gen,dbg,A_LineNumber,2,"sub_getextandrun = " run_command " " arguments " in path " command_path)
@@ -2091,6 +2092,7 @@ sub_empty:
 	if command_search =
 	{
 		SB_SetText(gui_statustext)
+		outputdebug >> %gui_statustext%
 		SB_SetIcon(icon_search)	; default search icon
 		gosub gui_othersearch
 		SetTimer, timer_checkempty, off
@@ -2423,7 +2425,6 @@ update_hitlist:	; in a separate subroutine so we can call it when a filter is en
 			}
 			if OutDir contains %list_restricted% ; contains %command_search%
 			{
-				outputdebug % outdir . " : " . list_restricted
 				if use_score = 1
 					score += score_restricted
 				if restricted_mode = 1
@@ -2663,7 +2664,7 @@ command_run:
 		if TrayTip = 1
 			TrayTip, Command executed, % tray_starting . " " . command_search,%traytime%
 		Splitpath, command_search, command_name, command_path, command_ext, command_name_noext
-		RunAsUser(command_search,, command_path)
+		ShellRun(command_search,"", command_path)
 		winwaitactive %command_search%
 		winactivate %command_search%
 		f_dbgtime(gen,dbg,A_LineNumber,"timer_execute_search","stop",3)
@@ -2921,49 +2922,6 @@ first_time_ok:
 	first_time_setup = 0
 	gosub sub_reload
 return
-; http://www.autohotkey.com/forum/topic78053.html
-; http://www.autohotkey.com/community/viewtopic.php?t=65768
-RunAsUser(Target, Arguments="", WorkingDirectory="")
-{
-   static TASK_TRIGGER_REGISTRATION := 7   ; trigger on registration. 
-   static TASK_ACTION_EXEC := 0  ; specifies an executable action. 
-   static TASK_CREATE := 2
-   static TASK_RUNLEVEL_LUA := 0
-   static TASK_LOGON_INTERACTIVE_TOKEN := 3
-   objService := ComObjCreate("Schedule.Service") 
-   objService.Connect() 
-
-   objFolder := objService.GetFolder("\") 
-   objTaskDefinition := objService.NewTask(0) 
-
-   principal := objTaskDefinition.Principal 
-   principal.LogonType := TASK_LOGON_INTERACTIVE_TOKEN    ; Set the logon type to TASK_LOGON_PASSWORD 
-   principal.RunLevel := TASK_RUNLEVEL_LUA  ; Tasks will be run with the least privileges. 
-
-   colTasks := objTaskDefinition.Triggers
-   objTrigger := colTasks.Create(TASK_TRIGGER_REGISTRATION) 
-   endTime += 1, Minutes  ;end time = 1 minutes from now 
-   FormatTime,endTime,%endTime%,yyyy-MM-ddTHH`:mm`:ss
-   objTrigger.EndBoundary := endTime
-   colActions := objTaskDefinition.Actions 
-   objAction := colActions.Create(TASK_ACTION_EXEC) 
-   objAction.ID := "7plus run"
-   objAction.Path := Target
-   objAction.Arguments := Arguments
-   objAction.WorkingDirectory := WorkingDirectory ? WorkingDirectory : A_WorkingDir
-   objInfo := objTaskDefinition.RegistrationInfo
-   objInfo.Author := "7plus" 
-   objInfo.Description := "Runs a program as non-elevated user" 
-   objSettings := objTaskDefinition.Settings 
-   objSettings.Enabled := True 
-   objSettings.Hidden := False 
-   objSettings.DeleteExpiredTaskAfter := "PT0S"
-   objSettings.StartWhenAvailable := True 
-   objSettings.ExecutionTimeLimit := "PT0S"
-   objSettings.DisallowStartIfOnBatteries := False
-   objSettings.StopIfGoingOnBatteries := False
-   objFolder.RegisterTaskDefinition("", objTaskDefinition, TASK_CREATE, "", "", TASK_LOGON_INTERACTIVE_TOKEN ) 
-}
 GUICLOSE:
 GUIESCAPE:
 	GoSub GUI_save_pos	; saves the position and dimensions of the GUI
