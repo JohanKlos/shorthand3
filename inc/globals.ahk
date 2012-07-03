@@ -25,7 +25,9 @@ if everythingPID =
 {
 	Process , exist , everything.exe	; check if the everything process is running in the background
 	everythingPID := Errorlevel
-}
+	if everythingPID = 0
+		run, %app_everything%,, hide, everythingPID
+}	
 
 img_folder			= %A_ScriptDir%\img
 check_exist_folder(img_folder)

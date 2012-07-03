@@ -147,9 +147,7 @@ shorthand_reload|reload|WIN+C|send
 			}
 		}
 		else
-		{
 			f_dbgoutput(gen,dbg,A_LineNumber,5,A_ThisLabel " " custom_file_%A_Index% " does not exist`, so skipped")
-		}
 	}
 	if custom_file_updated = 1	; parsing is only needed if a custom_file was newly loaded or changed
 	{
@@ -157,9 +155,7 @@ shorthand_reload|reload|WIN+C|send
 		Loop, %custom_files%
 		{
 			if custom_content_%A_Index% <>	; if the variable is not empty
-			{
 				total_custom .= "`n" custom_content_%A_Index%
-			}
 		}
 		SORT, total_custom, U	; makes the variable only have unique lines, to minimise memory footprint
 		list_hotkeys :=			; else an older command would still show up
@@ -276,7 +272,7 @@ parse_custom:	; parse the lines in %total_custom% (containing the contents of ea
 return
 
 hotkey_run:	; this subroutine is fired when the user presses a hotkey, at which time the line it belongs to is found and the accompanying command is executed (run/send/password/whatever)
-	f_dbgtime(gen,dbg,A_LineNumber,"hotkey_run","start",1)
+	f_dbgtime(gen,dbg,A_LineNumber,"hotkey_run","start",2)
 	Loop, parse, list_hotkeys, `n		; the total file with all the hotkeys, hotkeys only in the total_custom var
 	{
 		Stringreplace, line, A_LoopField, `r`n,,all
@@ -315,14 +311,14 @@ hotkey_run:	; this subroutine is fired when the user presses a hotkey, at which 
 					SendRaw %h_command%
 				else ; basically, this means "send"
 					Send %h_command%
-				f_dbgoutput(gen,dbg,A_LineNumber,2,"hotkey pressed: " h_hotkey " thereby executing """ h_command """ through " h_choice)
+				f_dbgoutput(gen,dbg,A_LineNumber,3,"hotkey pressed: " h_hotkey " thereby executing """ h_command """ through " h_choice)
 			}
 		}
 	}
 	h_hotkey 	:= ""
 	h_command 	:= ""
 	h_choice 	:= ""
-	f_dbgtime(gen,dbg,A_LineNumber,"hotkey_run","stop",1)
+	f_dbgtime(gen,dbg,A_LineNumber,"hotkey_run","stop",2)
 Return
 sub_getextandrun:
 	; check if there's a parameter (it will be after the extension)
@@ -365,7 +361,7 @@ sub_getextandrun:
 	else
 	{
 		if command_ext_split = lnk
-			run %command_path%\%run_command%
+			ShellRun(command_path . "\" . run_command, Arguments, command_path)
 		else if RunAsAdmin = 1
 		{
 			if selected_program <>
@@ -374,9 +370,7 @@ sub_getextandrun:
 				run, *runAs "%run_command%" %arguments%, %command_path%, UseErrorLevel
 		}
 		else
-		{
 			ShellRun(run_command, Arguments, command_path)
-		}
 		GoSub sub_errorlevel		; needed so the msgbox contains the right feedback to the user pertaining the error
 		f_dbgoutput(gen,dbg,A_LineNumber,2,"sub_getextandrun = " run_command " " arguments " in path " command_path)
 	}
@@ -776,6 +770,10 @@ GUI_show:
 			WinSet, Transparent, 255
 	}
 	GUI_hidden = 0
+	gui, submit, nohide
+	if command_search =
+		SB_SetText(gui_statustext)	; just in case the search has been emptied before the subroutine was done searching
+
 	GUIControl, focus, command_search
 	if gui_xempty = 1
 		GUIControl,, sub_clear, x
@@ -2093,7 +2091,6 @@ sub_empty:
 	if command_search =
 	{
 		SB_SetText(gui_statustext)
-		outputdebug %A_LineNumber% >> %gui_statustext%
 		SB_SetIcon(icon_search)	; default search icon
 		gosub gui_othersearch
 		SetTimer, timer_checkempty, off
@@ -2164,7 +2161,7 @@ search_first:
 	
 	if command_search =	; no search entry, so no need to go further
 	{
-		GoSub sub_empty
+		; GoSub sub_empty	; not needed, timer_checkempty will empty it
 		f_dbgtime(gen,dbg,A_LineNumber,"timer_execute_search","stop",2)
 		return
 	}
@@ -2483,11 +2480,17 @@ update_hitlist:	; in a separate subroutine so we can call it when a filter is en
 		LV_ModifyCol(4, "SortDesc")	; sort on score, highest first
 		LV_ModifyCol(4, "AutoHdr") 	; resizes column 4
 	}
-
-	GUI, Show, AutoSize
-	GUIControl, 1:+Redraw, Hitlist
-	
-	GoSub update_status_text	; this updates the status_text
+	gui, submit, nohide
+	if command_search =
+		SB_SetText(gui_statustext)	; just in case the search has been emptied before the subroutine was done searching
+	else
+	{
+		if GUI_hidden <> 1	; only autosize when the GUI is shown
+			GUI, Show, AutoSize
+		GUIControl, 1:+Redraw, Hitlist
+		
+		GoSub update_status_text	; this updates the status_text
+	}
 	OutFileName :=
 	OutExtension :=
 	command_path :=
@@ -2527,7 +2530,11 @@ update_status_text:
 
 	; ( elapsed_time = 1 ? " change" : " changes")
 	; GUIControl,, status_text, %text_search_time%
-	SB_SetText(text_search_time)
+	gui, submit, nohide
+	if command_search =
+		SB_SetText(gui_statustext)	; just in case the search has been emptied before the subroutine was done searching
+	else
+		SB_SetText(text_search_time)
 return
 select_hitlist:
 	GUI, 1:Default	; just to make sure we fill the right GUI
@@ -2756,7 +2763,7 @@ check_update_automatic:
 	last_updated := A_Now - last_update	; the number of seconds since the last time the app checked for an update
 	if last_updated < %update_interval%
 	{
-		f_dbgoutput(gen,dbg,A_LineNumber,1,"check_update_automatic = check for updates skipped`, last check " last_updated " seconds ago: updatecheck in " update_interval - last_updated " seconds")
+		f_dbgoutput(gen,dbg,A_LineNumber,1,"check_update_automatic = check for updates skipped`, last check " last_updated " seconds ago: next automatic updatecheck in " update_interval - last_updated " seconds")
 		return
 	}
 	IniWrite, %A_Now%, %ini_file%, General, last_update

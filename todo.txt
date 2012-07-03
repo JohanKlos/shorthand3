@@ -4,18 +4,27 @@ TO DO
 -----------------------------
 	short term
 	-------------------------
+	fixed:
+	- when doing a large search and the user navigates away, it autohides but then pops back up and doesn't autohide
+	- try opening snipping tool.lnk, it'll error on line 368
+	
+	open:
+	- split hardcoded text into language vars
+	- create language files
+		* add "change language" subroutine to menu > just reload seems easiest because of gui and menu's
+	- plugin: timer
+	- replace all runs with shellrun? < problems with the menu and "run, explore " and "run, properties " options
+	
 	- optimise search so it refines old search results instead of searching anew for every character typed: Fragman: if(InStr(NewQuery, OldQuery))
 	- check password encryption against http://throwingfire.com/storing-passwords-securely/
 	- check hotkeyit for ideas
 		* password: StringCaseSense On
 	
-	- split hardcoded text into language vars
-	- create language files
-		* add "change language" subroutine to menu > just reload seems easiest because of gui and menu's
 	- create About GUI
 	- add "action" in GUI (instead of contextmenu) : see demo of nDroid: http://www.codenite.com/demo.html
 	
 	- resize gui
+	- add plugin GUI (use names instead of numbers?)
 	- optimise menu
 	- add context menu option to add custom entries (add hotkey option and everything) > only run files, not sends (as those don't show up in the hitlist)
 	- add context menu to add to ignore list
@@ -25,7 +34,6 @@ TO DO
 	- find a way to hide the trayicon for the plugin tester, maybe get the text of the script and append the #notrayicon line?
 	- plugin: recycle bin emptier
 	- plugin: hide/move by sliding
-	- plugin: timer
 	- menu plugin entries
 	- add "only search" option and items to GUI2
 	- history is not working after you refine a search (search and then add letters to the search term)
