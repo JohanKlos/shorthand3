@@ -13,17 +13,41 @@ it not to be loaded anymore (plugins\disabled)
 	
 	if plugin =	; check for required parameter
 	{
-		outputdebug %app_name% %app_ver%: Required parameter (plugin path\name.ahk) missing.
+		outputdebug %app_name% %app_ver%: Required parameter missing (plugin path + plugin name eg: c:\shorthand\plugin\sh_timer.ahk).
+		exitapp
+	}
+	ifNotExist %disabled%
+	{
+		outputdebug %app_name% %app_ver%: Required parameter missing (disabled plugin folder eg: c:\shorthand\plugin\disabled).
 		exitapp
 	}
 	outputdebug %app_name% %app_ver%: testing %plugin%
 	SplitPath, plugin, plugin_name
-	
-	; first, start a timer that looks for OutputVarPID, and closing it after a second
-	settimer, check
-	OutputVarPID :=
-	RunWait "%plugin%", %A_ScriptDir%,,OutputVarPID
-	; because we use RunWait, if we get to the next line within a second, the plugin is faulty
+	; check if the plugin has the required lines: 
+	fileread, plugin_contents, %plugin%
+	if ( plugin_contents not contains "#ErrorStdOut" ) or ( plugin_contents not contains "#NoTrayIcon" )
+	{
+		outputdebug %app_name% %app_ver%: Required parameter ("#ErrorStdOut" and/or "#NoTrayIcon") missing in plugin %plugin%.
+		gosub failed
+	}
+	else
+	{
+		; first, start a timer that looks for OutputVarPID, and closing it after a second
+		settimer, check, 1000
+		; this won't work when there's settimers involved, so we need to look in the auto-run section of the script and disable any settimers there
+		fileread, plugin_contents, %plugin%
+		Stringreplace, plugin_contents, plugin_contents, settimer, `;settimer,,ALL	; disable all settimers
+		ifexist %A_Temp%\testplugin.ahk
+			FileDelete %A_Temp%\testplugin.ahk
+		FileAppend, %plugin_contents%, %A_Temp%\testplugin.ahk
+		plugin_contents :=
+		OutputVarPID :=
+		RunWait "%A_Temp%\testplugin.ahk", %A_ScriptDir%,,OutputVarPID
+		; because we use RunWait, if we get to the next line within a second, the plugin is faulty
+		gosub failed
+	}
+return
+failed:
 	outputdebug %app_name% %app_ver%: %plugin% is faulty `n move to %disabled%
 	ifExist %disabled%
 		FileMove, %plugin%, %disabled%\%plugin_name%

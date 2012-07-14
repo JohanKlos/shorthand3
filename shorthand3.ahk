@@ -37,6 +37,7 @@ f_dbgtime(gen,dbg,A_LineNumber,"Bootup","start",0) ; sub_time shows in outputdeb
 	f_dbgoutput(gen,dbg,A_LineNumber,0,"debugging = " debugging)
 	
 	GoSub timer_load_custom ; needs to be before menu so menu populates correctly with (eventually, maybe) list of bound hotkeys and custom_files
+	SetTimer timer_load_custom
 	GoSub Menu
 	GoSub Checks
 	GoSub GUI
@@ -404,6 +405,8 @@ menu:
 		ifexist % custom_file_%A_Index%
 			Menu, menu_files, Add, % "Open " . custom_file_%A_Index%, menu_open	; beware of the StringTrimLeft in menu_open !
 	}
+	Menu, menu_files, Add
+	Menu, menu_files, Add, Add Custom file, lv_custom_file_add_existing
 	Loop, %A_ScriptDir%\plugins\*.ahk
 	{
 		if A_LoopFileName = 
@@ -573,18 +576,18 @@ checks:
 Return
 
 GUI:
-	f_dbgtime(gen,dbg,A_LineNumber,"GUI","start",1)
+	f_dbgtime(gen,dbg,A_LineNumber,"GUI","start",2)
 	GUI +MinSize
 	; check for apps\Everything.db ?
 ;	if GUI_resize = 1
 ;		GUI +resize -MaximizeBox  ; +resize will activate the maximizebox, -MaximizeBox is to prevent that
 	if GUI_autohide = 1
-		SetTimer timer_autohide, 1000
+		SetTimer, timer_autohide, 1000
 	
 	ifwinexist, %GUI_name%	; if the GUI already exists, just show it and do nothing else
 	{
 		GoSub GUI_show
-		f_dbgtime(gen,dbg,A_LineNumber,"GUI","stop",1)
+		f_dbgtime(gen,dbg,A_LineNumber,"GUI","stop",2)
 		return
 	}
 	
@@ -687,7 +690,7 @@ GUI:
 	GUI Add, Picture, x5 y5 w1 h1 gMoveGui vBackground BackgroundTrans, ; %A_ScriptDir%\img\black.png ; black.png is for troubleshooting
 	GoSub GUI_show
 	; WinSet, TransColor, FF00FF, %GUI_Name%	; for the edges of the GUI
-	f_dbgtime(gen,dbg,A_LineNumber,"GUI","stop",1)
+	f_dbgtime(gen,dbg,A_LineNumber,"GUI","stop",2)
 return
 MoveGui: ; berban : Allows for moving the GUI through the background image on the GUI
 	if gui_easymove = 1
@@ -1177,12 +1180,12 @@ lv_plugins_click:
 	if selected_plugin in %checked_list%
 	{
 		IfNotExist %A_ScriptDir%\plugins\%plugin_name%
-			FileMove, %A_ScriptDir%\plugins\disabled\%plugin_name%, %A_ScriptDir%\plugins\%plugin_name%
+			FileMove, %A_ScriptDir%\plugins\disabled\%plugin_name%, %A_ScriptDir%\plugins
 	}
 	else
 	{
 		IfNotExist %A_ScriptDir%\plugins\disabled\%plugin_name%
-			FileMove, %A_ScriptDir%\plugins\%plugin_name%, %A_ScriptDir%\plugins\disabled\%plugin_name%
+			FileMove, %A_ScriptDir%\plugins\%plugin_name%, %A_ScriptDir%\plugins\disabled
 	}
 return
 lv_plugins_check:
@@ -1225,17 +1228,19 @@ sub_getplugindetails:
 ; Category = Enhancement
 ; Version = 0.01
 ; Description = Checks for and closes specified windows, based on wintitle and ahk_class
+; Author = Maestr0
 	name = N/A
 	cat = N/A
 	ver = N/A
 	desc = N/A
-	Loop, 5	; read the first 5 lines of each plugin
+	Loop, 6	; read the first 6 lines of each plugin
 	{
 		FileReadLine, line, %A_LoopFileFullPath%, %A_Index%
 		parse_plugin(line,"Name","Name")
 		parse_plugin(line,"Version","ver")
 		parse_plugin(line,"Category","cat")
 		parse_plugin(line,"Description","desc")
+		parse_plugin(line,"Author","Author")
 	}
 return
 parse_plugin(line,descriptor,desc_short)
@@ -1290,8 +1295,10 @@ lv_custom_file_add_existing:
 	ifexist %new_custom%
 	{
 		IniWrite, %new_custom%, %ini_file%, Files, custom_file_%empty_custom_number%
-		gosub lv_custom_files_fill	; repopulate the listview
+		ifwinexist, %GUI2_name%
+			gosub lv_custom_files_fill
 	}
+	gosub menu	; update the menu
 return
 lv_custom_file_edit:
 	gosub lv_custom_selected
@@ -1312,6 +1319,7 @@ lv_custom_file_remove:
 		msgbox,, %App_name%, First, you'll need to select a custom file in the list.
 		return
 	}
+	/*
 	; ask the user if the file needs to be deleted as well, but only if the file exists in the first place
 	ifexist %command%
 	{
@@ -1321,6 +1329,7 @@ lv_custom_file_remove:
 		IfMsgBox cancel
 			return	; because inidelete is below this question, it does not get deleted from the ini_file if the user presses cancel
 	}
+	*/
 	; find the custom_file number of the selected line
 	loop, %custom_files%
 	{
@@ -1333,6 +1342,7 @@ lv_custom_file_remove:
 		}
 	}
 	gosub lv_custom_files_fill	; repopulate the listview
+	gosub menu	; update the menu
 return
 lv_custom_selected:
 	; change the default GUI so the right listview is filled
@@ -1921,9 +1931,9 @@ GUI_autohide:
 	IniWrite, %GUI_autohide%, %ini_file%, GUI, GUI_autohide
 	Menu, Context, ToggleCheck, %t_autohide%
 	if GUI_autohide = 1
-		SetTimer timer_autohide, 1000
+		SetTimer, timer_autohide, 1000
 	else
-		SetTimer timer_autohide, Off
+		SetTimer, timer_autohide, Off
 return
 GUI_statusbar:
 	GUI_statusbar := !GUI_statusbar
@@ -2173,6 +2183,9 @@ search_first:
 			engine_URL := parse_search_engines(3,search_engine_default)
 		engine_search := SubStr(command_search,firstspace + 1)
 		SB_SetText("Search " . engine_desc . " for: " . engine_search)
+		icon_engine = %img_folder%\icon_%engine_desc%.ico
+		ifexist %icon_engine%
+			SB_SetIcon(icon_engine)
 
 		if set_search != 1	; to prevent flickering of the GUI
 		{
@@ -2940,7 +2953,7 @@ GUICLOSE:
 GUIESCAPE:
 	GoSub GUI_save_pos	; saves the position and dimensions of the GUI
 	GoSub GUI_hide
-	SetTimer timer_autohide, off	; GUI has closed, so the autohide timer is no longer needed
+	SetTimer, timer_autohide, off	; GUI has closed, so the autohide timer is no longer needed
 return
 ExitSub:
 	GoSub GUI_save_pos	; saves the position and dimensions of the GUI

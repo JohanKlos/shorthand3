@@ -9,6 +9,10 @@ TO DO
 	- try opening snipping tool.lnk, it'll error on line 368
 	
 	open:
+	- plugin_tester: icon and GUI to test plugins? < change plugin_tester, it won't work with settimers
+	- plugin gets loaded twice?
+	- use senddata() to put plugin menu into the main script (http://www.autohotkey.com/community/viewtopic.php?t=83276)
+	- instead of plugin tray menu, a context menu?
 	- split hardcoded text into language vars
 	- create language files
 		* add "change language" subroutine to menu > just reload seems easiest because of gui and menu's
@@ -23,6 +27,7 @@ TO DO
 	- create About GUI
 	- add "action" in GUI (instead of contextmenu) : see demo of nDroid: http://www.codenite.com/demo.html
 	
+	- roll-out option main GUI when always visible
 	- resize gui
 	- add plugin GUI (use names instead of numbers?)
 	- optimise menu

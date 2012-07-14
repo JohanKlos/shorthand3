@@ -1,9 +1,9 @@
 /*
-This script basically loads all the plugins after they've been vetted by the main script.
-The main script will check all plugins and put move any non-working ones into a subfolder called "plugins\disabled".
-Because plugins may contain a "return", a list of #includes will not work, as it will stop after the first #include.
+This script loads all the plugins after they've been vetted by a test script: plugin_tester.ahk.
+The test script will check all plugins and put move any non-working ones into a subfolder called "plugins\disabled".
+Because plugins may contain a "return", a list of #includes will not work, as the autoexec section will stop after the first #include.
 
-Berbans' method overcomes this by first doing a gosub label before including the files....
+Berbans' method overcomes this by first doing a gosub label before including the files, circumventing the returns....
 */
 #Persistent
 #SingleInstance Force

@@ -42,7 +42,7 @@ Plugins()
 				{
 					f_dbgoutput(gen,dbg,A_LineNumber,3,A_LoopField " changed: checking")
 					StringLeft, OutputVar, A_LoopField, % InStr(A_LoopField, "|") - 1	; gets the filename
-					runwait, "%A_AhkPath%" "%A_ScriptDir%\app\plugin_tester.ahk" "%A_ScriptDir%\Plugins\%OutputVar%" "%A_ScriptDir%\plugins\disabled\"
+					runwait, "%A_AhkPath%" "%A_ScriptDir%\app\plugin_tester.ahk" "%A_ScriptDir%\Plugins\%OutputVar%" "%A_ScriptDir%\plugins\disabled"
 				}
 				else
 					f_dbgoutput(gen,dbg,A_LineNumber,3,A_LoopField " unchanged: checking next plugin")

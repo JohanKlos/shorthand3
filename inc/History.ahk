@@ -1,7 +1,7 @@
 fill_history(command)
 {
 	global
-	f_dbgtime(gen,dbg,A_LineNumber,"fill_history","start",1)
+	f_dbgtime(gen,dbg,A_LineNumber,"fill_history","start",2)
 	f_dbgoutput(gen,dbg,A_LineNumber,3,"fill_history: " use_history " adding " command)
 
 	fileread, history, %log_history%
@@ -14,7 +14,7 @@ fill_history(command)
 	filedelete %log_history%
 	fileappend, %history%,%log_history%
 	score_history_read := history
-	f_dbgtime(gen,dbg,A_LineNumber,"fill_history","stop",1)
+	f_dbgtime(gen,dbg,A_LineNumber,"fill_history","stop",2)
 	return history
 }
 parse_history()

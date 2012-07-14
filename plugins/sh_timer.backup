@@ -1,0 +1,83 @@
+; Name = Timer
+; Category = Utility 
+; Version = 0.01
+; Description = Add a timer to the menu that allows for setting a timed alarm/sleep/shutdown/lock.
+#ErrorStdOut ; this line needs to be in every plugin
+
+/*
+	to do:
+	- make menu to start certain countdowns
+*/
+
+sh_timer:
+	outputdebug Shorthand plugin loaded: sh_timer version 0.01
+	text_action1 =	Log off
+	text_action2 =	Reboot
+	text_action3 =	Shutdown
+	text_action4 =	Power off
+	text_action5 =	Standby
+	text_action6 =	Hibernate
+	text_action7 =	Lock Windows
+	text_action8 =	Turn off monitor
+	text_action9 =	Turn on monitor
+	text_action10 =	Screensaver
+	text_action11 =	No Action
+	; gosub sh_timer_gui
+return
+
+sh_timer_gui:
+	Gui, sh_timer:new
+	Gui sh_timer:Add, GroupBox, y8 w205 h45 section, Action
+	stringreplace , last_action_2 , chosen_action , action ,	; -- needed to get rid of the "action" part in the variable
+	Gui sh_timer:Add, DropDownList,  vaction_2 xs+10 ys+18 w185 r11 altsubmit, %text_action1%|%text_action2%|%text_action3%|%text_action4%|%text_action5%|%text_action6%|%text_action7%|%text_action8%|%text_action9%|%text_action10%|%text_action11%
+
+	Gui sh_timer:Add, GroupBox, xs ys+50 w205 h113 section, Options
+	Gui sh_timer:Add, Checkbox,  vwarning xs+10 ys+18 w115 h18 section, &Warning message
+	Gui sh_timer:Add, Checkbox,  vprogram_run xs wp hp, &Run Program
+	Gui sh_timer:Add, Checkbox,  vprogram_close xs wp hp , Close Program
+	Gui sh_timer:Add, Checkbox,  vallow_cancel xs wp hp , Allow cancel
+	Gui sh_timer:Add, Button, disabled  vbmessage xs+120 ys-2 w70 h20, Message...
+	Gui sh_timer:Add, Button, disabled  vbprogram xs+120 ys+24 wp hp , Program...
+	Gui sh_timer:Add, Button, disabled  vbprogram_close xs+120 ys+48 wp hp , Program...
+	
+	/*
+	if warning = 1
+	{
+		GUIControl , sh_timer: , warning , 1
+		GUIControl , sh_timer:enable , bmessage
+	}
+	if program_run = 1
+	{
+		GUIControl , sh_timer: , program_run , 1
+		GUIControl , sh_timer:enable , bprogram
+	}
+	if allow_cancel = 1
+		GUIControl , sh_timer: , allow_cancel , 1
+	if program_close = 1
+	{
+		GUIControl , sh_timer: , program_close , 1
+		GUIControl , sh_timer:enable , bprogram_close
+	}
+	*/
+	Gui sh_timer:Add, GroupBox, xs-10 ys+96 w205 h115 section, When
+	Gui sh_timer:Add, Radio,  vwhen xs+10 ys+18 w115 h18 section checked, &Immediate
+	Gui sh_timer:Add, Radio,  xs wp hp section, &Scheduled
+	Gui sh_timer:Add, Radio,  xs wp hp , &Countdown
+	Gui sh_timer:Add, Radio,  xs wp hp , &After a process stops
+	Gui sh_timer:Add, Button, disabled  vbschedule xs+120 ys-2 w70 h20, Schedule...
+	Gui sh_timer:Add, Button, disabled  vbtimer xs+120 ys+24 wp hp , Timer...
+	Gui sh_timer:Add, Button, disabled  vbprocess xs+120 ys+48 wp hp , Process...
+
+	; gosub cwhen	; -- this selects the radio button and activates the right button
+
+	Gui sh_timer:Add, Button, disabled  vgui_timer xs-10 w95 section, &Timers (%timer_total%)
+	Gui sh_timer:Add, Button, ys wp gsh_t_ok Default, &OK
+
+	if timer_total > 0
+		GUIControl,sh_timer:enable, gui_timer
+	
+	Gui sh_timer:Show, , Shorthand Timer
+return
+sh_t_ok:
+	gui, sh_timer:submit, nohide
+return
