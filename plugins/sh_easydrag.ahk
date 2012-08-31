@@ -2,6 +2,8 @@
 ; Category = Enhancement
 ; Version = 0.01
 ; Description = Allows alt-left click to drag windows and alt-right click to resize windows.
+; Author = Maestr0
+#persistent ; this line needs to be in every plugin
 #ErrorStdOut ; this line needs to be in every plugin
 #NoTrayIcon ; this line needs to be in every plugin
 

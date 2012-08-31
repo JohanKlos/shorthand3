@@ -2,6 +2,8 @@
 ; Category = Enhancement
 ; Version = 0.02
 ; Description = Checks for and closes specified windows, in the main ini file, comma separated per window, WinTitle|control|keys
+; Author = Maestr0
+#persistent ; this line needs to be in every plugin
 #ErrorStdOut ; this line needs to be in every plugin
 #NoTrayIcon ; this line needs to be in every plugin
 DetectHiddenWindows ON

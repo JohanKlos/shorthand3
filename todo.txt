@@ -7,8 +7,12 @@ TO DO
 	fixed:
 	- when doing a large search and the user navigates away, it autohides but then pops back up and doesn't autohide
 	- try opening snipping tool.lnk, it'll error on line 368
+	added:
+	- open http / do ? actions with custom browser (in preferences)
 	
 	open:
+	- plugin: recycle bin emptier
+	- when the user scrolled to the right in the listview, the place is remembered until a reload... change it so it's cleared on "empty" ?
 	- plugin_tester: icon and GUI to test plugins? < change plugin_tester, it won't work with settimers
 	- plugin gets loaded twice?
 	- use senddata() to put plugin menu into the main script (http://www.autohotkey.com/community/viewtopic.php?t=83276)
@@ -37,7 +41,6 @@ TO DO
 	- add timestamp to history (so we can prune history entries that are > 30 days old)
 	- use Self Script Updater and make a GUI with URLGet
 	- find a way to hide the trayicon for the plugin tester, maybe get the text of the script and append the #notrayicon line?
-	- plugin: recycle bin emptier
 	- plugin: hide/move by sliding
 	- menu plugin entries
 	- add "only search" option and items to GUI2

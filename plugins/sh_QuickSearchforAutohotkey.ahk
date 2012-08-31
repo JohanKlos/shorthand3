@@ -4,6 +4,7 @@
 ; Version = 0.01
 ; Description = Adds a hotkey (alt-h) to search in the Autohotkey forums from an inputbox
 ; URL = http://www.autohotkey.com/community/viewtopic.php?p=196070#196070
+#persistent ; this line needs to be in every plugin
 #ErrorStdOut ; this line needs to be in every plugin
 #NoTrayIcon ; this line needs to be in every plugin
 

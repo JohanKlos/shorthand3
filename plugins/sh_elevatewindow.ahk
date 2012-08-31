@@ -2,6 +2,8 @@
 ; Category = Enhancement
 ; Version = 0.01
 ; Description = Elevates currently active window (meaning re-runs it as admin)
+; Author = Maestr0
+#persistent ; this line needs to be in every plugin
 #ErrorStdOut ; this line needs to be in every plugin
 #NoTrayIcon ; this line needs to be in every plugin
 

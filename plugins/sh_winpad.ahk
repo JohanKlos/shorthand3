@@ -1,7 +1,9 @@
 ; Name = WindowPad
 ; Category = Enhancement
-; Version = 1.14
+; Version = 1.14new
 ; Description = Based on WindowPad version 1.14, without EasyKey, as it was interfering with Shorthand hotkeys
+; Author = Maestr0
+#persistent ; this line needs to be in every plugin
 #ErrorStdOut ; this line needs to be in every plugin
 #NoTrayIcon ; this line needs to be in every plugin
 
@@ -59,16 +61,14 @@ GatherWindowsRight:
     GatherWindows(1)
     return
 
-
-
 ; Hotkey handler.
 DoMoveWindowInDirection:
     DoMoveWindowInDirection()
     return
 
 DoMoveWindowInDirection()
-{
-    local dir, dir0, dir1, dir2, widthFactor, heightFactor
+{ 
+    local dir, dir0, dir1, dir2, widthFactor, heightFactor, ScaleFactor
     
     ; Define constants.
     if (!Directions1) {
@@ -86,11 +86,38 @@ DoMoveWindowInDirection()
     }
     dir := Directions%dir%
     StringSplit, dir, dir, :
+
+    ;   DoMoveWindowInDirection Direction Toggle
+    ;   Scale Factor toggles on successive Do left/right/up/down calls 
+    ; Determine Scale Factor
+    ScaleFactor := 0.5
+    if (dir1=0) { 
+        if (lastDir2=dir2) 
+            Dir2toggle := mod(Dir2toggle+1,3) 
+         else 
+            Dir2toggle := 0
+        if (Dir2toggle=1)
+            ScaleFactor := 0.3334
+        if (Dir2toggle=2) 
+            ScaleFactor := 0.6666 
+        lastDir2 := dir2
+    } 
+    if (dir2=0) {
+        if (lastDir1=dir1) 
+            Dir1toggle := mod(Dir1toggle+1,3) 
+        else 
+            Dir1toggle := 0
+        if (Dir1toggle=1) 
+            ScaleFactor := 0.3334 
+        if (Dir1toggle=2) 
+            ScaleFactor := 0.6666 
+        lastDir1 := dir1
+    }
     
     ; Determine width/height factors.
     if (dir1 or dir2) { ; to a side
-        widthFactor  := dir1 ? 0.5 : 1.0
-        heightFactor := dir2 ? 0.5 : 1.0
+        widthFactor  := dir1 ? ScaleFactor : 1.0
+        heightFactor := dir2 ? ScaleFactor : 1.0
     } else {            ; to center
         widthFactor  := CenterWidthFactor
         heightFactor := CenterHeightFactor
@@ -243,6 +270,10 @@ WinPreviouslyActive()
             
             break
         }
+
+    ; Reset DoMoveWindowInDirection Direction Toggles 
+    Dir1toggle := 0
+    Dir2toggle := 0
 
     ; Use WinExist to set Last Found Window (for consistency with WinActive())
     return WinExist("ahk_id " . win%N%)

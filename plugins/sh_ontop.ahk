@@ -2,10 +2,13 @@
 ; Category = Hotkey 
 ; Version = 0.02
 ; Description = Add hotkeys (CTRL-ALT-up / down) to put the active window on top or vice versa or (CTRL-WIN-W) to remove the caption
+; Author = Maestr0
+#persistent ; this line needs to be in every plugin
 #ErrorStdOut ; this line needs to be in every plugin
+#NoTrayIcon ; this line needs to be in every plugin
 
 sh_ontop:
-	outputdebug Shorthand plugin loaded: sh_ontop version 0.01 
+	outputdebug Shorthand plugin loaded: sh_ontop version 0.02
 	; make the selected window always on top
 	hotkey,^!up,hotkey_ontop
 	; make the selected window not always on top

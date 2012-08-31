@@ -87,6 +87,7 @@ Read_ini:
 	IniRead, GUI_w, %ini_file%, GUI, GUI_w, 447								; width for the main GUI
 	IniRead, GUI_h, %ini_file%, GUI, GUI_h, 127								; height for the main GUI
 
+	IniRead, gui_openonstartup, %ini_file%, GUI, gui_openonstartup, 0		; show the GUI when the script is (re)loaded
 	IniRead, search_delay, %ini_file%, GUI, search_delay, 250				; delay before searching to prevent searching at every keystroke
 
 	IniRead, text_editor_ext, %ini_file%, GUI, text_editor_ext, %A_Space%	; list of extensions to open with the specified text editor
@@ -119,8 +120,10 @@ Read_ini:
 	IniRead, show_lnk, %ini_file%, GUI, show_lnk, 1							; when 0, the results will show the path to the actual file, instead of the .lnk filename
 
 	IniRead, restricted_mode, %ini_file%, GUI, restricted_mode, 1			; 1 means it'll only show hits in one of the restricted folders
-	A_TaskbarPinned = %A_AppData%\Microsoft\Internet Explorer\Quick Launch\User Pinned\TaskBar
-	list_restricted = %A_Desktop%,%A_DesktopCommon%,%A_StartMenu%,%A_StartMenuCommon%,%A_TaskbarPinned%
+	; A_TaskbarPinned = %A_AppData%\Microsoft\Internet Explorer\Quick Launch\User Pinned\TaskBar
+	A_QuickLaunch = %A_AppData%\Microsoft\Internet Explorer\Quick Launch
+
+	list_restricted = %A_Desktop%,%A_DesktopCommon%,%A_StartMenu%,%A_StartMenuCommon%,%A_QuickLaunch%
 	
 	IniRead, GUI_ontop, %ini_file%, GUI, GUI_ontop, 1						; if 1 the search window will be always on top when not hidden
 	IniRead, GUI_fade, %ini_file%, GUI, GUI_fade, 0							; if 1 fades the search window in and out
@@ -152,6 +155,8 @@ Read_ini:
 	}
 
 	IniRead, browser, %ini_file%, programs, browser, iexplore.exe
+	IniRead, use_custom_browser, %ini_file%, GUI, use_custom_browser, 0	; if 0, shorthand will use the systems' default browser, otherwise, the specified browser will be used for http and ? commands 
+
 	IniRead, text_editor, %ini_file%, programs, text_editor, notepad.exe
 	SplitPath, text_editor , text_editor_name
 	IniRead, graphics_editor, %ini_file%, programs, graphics_editor, mspaint.exe

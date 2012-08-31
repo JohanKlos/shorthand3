@@ -3,6 +3,7 @@
 ; Version = 0.01
 ; Description = Add a timer to the menu that allows for setting a timed alarm/sleep/shutdown/lock.
 ; Author = Maestr0
+#persistent ; this line needs to be in every plugin
 #NoTrayIcon ; this line needs to be in every plugin
 #ErrorStdOut ; this line needs to be in every plugin
 

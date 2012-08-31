@@ -2,12 +2,13 @@
 ; Category = Enhancement
 ; Version = 0.01
 ; Description = Move the active window to the mousecursor with a hotkey
+; Author = Maestr0
+#persistent ; this line needs to be in every plugin
 #ErrorStdOut ; this line needs to be in every plugin
 #NoTrayIcon ; this line needs to be in every plugin
 
 sh_winmove:
-	outputdebug Shorthand plugin loaded: sh_winmove version 0.01 
-
+	outputdebug Shorthand plugin loaded: sh_winmove version 0.01
 	hotkey,#g,hotkey_winmove
 return
 

@@ -29,10 +29,16 @@ f_dbgtime(gen,dbg,A_LineNumber,"Bootup","start",0) ; sub_time shows in outputdeb
 
 	Plugins()
 	read_ini()
+	
+	StringReplace, ini_file_path, ini_file, %A_ScriptDir%
+	StringReplace, app_find_path, app_find, %A_ScriptDir%
+	StringReplace, app_findstr_path, app_findstr, %A_ScriptDir%	
+	
 	f_dbgoutput(gen,dbg,A_LineNumber,0,"portable = " portable)
-	f_dbgoutput(gen,dbg,A_LineNumber,0,"ini_file = " ini_file)
-	f_dbgoutput(gen,dbg,A_LineNumber,0,"app_find = " app_find)
-	f_dbgoutput(gen,dbg,A_LineNumber,0,"app_findstr = " app_findstr)
+	f_dbgoutput(gen,dbg,A_LineNumber,0,"path = " A_ScriptDir)
+	f_dbgoutput(gen,dbg,A_LineNumber,0,"ini_file = " ini_file_path)
+	f_dbgoutput(gen,dbg,A_LineNumber,0,"app_find = " app_find_path)
+	f_dbgoutput(gen,dbg,A_LineNumber,0,"app_findstr = " app_findstr_path)
 	f_dbgoutput(gen,dbg,A_LineNumber,0,"logging = " logging)
 	f_dbgoutput(gen,dbg,A_LineNumber,0,"debugging = " debugging)
 	
@@ -40,7 +46,8 @@ f_dbgtime(gen,dbg,A_LineNumber,"Bootup","start",0) ; sub_time shows in outputdeb
 	SetTimer timer_load_custom
 	GoSub Menu
 	GoSub Checks
-	GoSub GUI
+	if gui_openonstartup = 1
+		GoSub GUI
 	Hotkey, IfWinActive, ahk_pid %script_PID%
 		Hotkey, !E, set_advanced
 		Hotkey, !F, toggle_set_filter_folders
@@ -630,32 +637,23 @@ GUI:
 		GUI Add, Button, ys+1 h20 w72 vset_advanced gset_advanced border center, %gui_advanced%
 	else
 		GUI Add, button, ys+1 h21 w72 vset_advanced gset_advanced center, %gui_advanced%
-
 	GUI Add, Picture, ys+3 h16 w16 vpreferences_icon gGUI2 Icon1, %icon_settings%	; this control to be moved through GUISize
 	GUI Add, Button, ys-1 gcommand_run default hidden,
-
 	; row two of the main GUI (the advanced portion, like the search_inside editbox)
 	; needs to start shown, to get the coordinates for advanced/simple toggle
-	GUI Add, Text, x30 h16 w60 vadvanced section, %gui_containing%
-	GUI Add, Edit, ys-3 w%gui_w_edit2% vsearch_inside gsearch section r1, %parameter% 	; the y of this control functions as the mark of the Y for the advanced section
+	GUI Add, Text, x32 h16 w60 vadvanced section, %gui_containing%
+	GUI Add, Edit, x100 ys-3 w%gui_w_edit2% vsearch_inside gsearch section r1, %parameter% 	; the y of this control functions as the mark of the Y for the advanced section
 	GUIControlGet, search_inside, Pos	; to determine what Y the advanced controls are at, needed for moving the controls
-	
+
 	; filter_extensions lets the user decide to filter the results based on extension
-	GUI Add, Checkbox, x9 w16 h16 vfilter_extensions gset_filter_extensions Checked%filter_extensions% %advanced_status% section, 
-	GUI Add, Text, x30 ys w60 r1 vfilter_extensions_text gset_filter_extensions_text %advanced_status%, %gui_extensions% 	; this control to be resized through GUISize
-	GUI Add, Edit, ys-4 w%gui_w_edit2% r1 vlist_extensions gset_extensions right %advanced_status%, %list_extensions% 	; this control to be resized through GUISize
-
+	GUI Add, Checkbox, x9 h16 vfilter_extensions gset_filter_extensions Checked%filter_extensions% %advanced_status% section, %A_Space%%gui_extensions%
+	GUI Add, Edit, x100 ys-4 w%gui_w_edit2% r1 vlist_extensions gset_extensions right %advanced_status%, %list_extensions% 	; this control to be resized through GUISize
 	; filter_folders lets the user decide to not show the folders
-	GUI Add, Checkbox, xs w16 h16 vfilter_folders gset_filter_folders Checked%filter_folders% %advanced_status% section, 
-	GUI Add, Text, x30 ys w60 r1 vfilter_folders_text gset_filter_folders_text %advanced_status%, %gui_hidefolders%
-	
+	GUI Add, Checkbox, xs h16 vfilter_folders gset_filter_folders Checked%filter_folders% %advanced_status% section, %A_Space%%gui_hidefolders%
 	; filter_ignores lets the user decide to not show files with certain words
-	GUI Add, Checkbox, ys w16 h16 vfilter_ignores gset_filter_ignores Checked%filter_ignores% %advanced_status%, 
-	GUI Add, Text, ys w80 r1 vfilter_ignores_text gset_filter_ignores_text %advanced_status%, %gui_ignorelist%
-
+	GUI Add, Checkbox, ys h16 vfilter_ignores gset_filter_ignores Checked%filter_ignores% %advanced_status%, %A_Space%%gui_ignorelist%
 	; restricted_mode lets the user only show hits in certain folder (pinned/startmenu/desktop)
-	GUI Add, Checkbox, ys w16 h16 vrestricted_mode gset_restricted_mode Checked%restricted_mode% %advanced_status%, 
-	GUI Add, Text, ys w80 r1 vrestricted_mode_text gset_restricted_mode_text %restricted_mode%, %gui_restrictedmode%
+	GUI Add, Checkbox, ys h16 vrestricted_mode gset_restricted_mode Checked%restricted_mode% %advanced_status%, %A_Space%%gui_restrictedmode%
 	
 	; the listbox which will hold the results
 	GUI Add, ListView, x7 r20 w%gui_w_hitlist% vhitlist gsub_lv_cmd AltSubmit -multi count%max_results% sort hidden, %gui_hitlist%
@@ -775,8 +773,10 @@ GUI_show:
 	GUI_hidden = 0
 	gui, submit, nohide
 	if command_search =
+	{
+		outputdebug empty > %gui_statustext% : Fill search field...
 		SB_SetText(gui_statustext)	; just in case the search has been emptied before the subroutine was done searching
-
+	}
 	GUIControl, focus, command_search
 	if gui_xempty = 1
 		GUIControl,, sub_clear, x
@@ -881,11 +881,12 @@ GUI2:	; the GUI with the preferences and settings
 	- showing icon on taskbar "toolwindow" when active
 	*/
 	; programs to open with
-	GUI 2:Add, GroupBox, xs w480 h200 vp1_1_progs, Programs
+	GUI 2:Add, GroupBox, xs w480 h225 vp1_1_progs, Programs
 	
 	GUI 2:Add, Text, xp+20 yp+25 w90 vbrowser_text section, Internet browser
 	GUI 2:Add, Edit, xp+90 yp-3 vbrowser r1 w300 readonly, %browser%
 	GUI 2:Add, Button, xp+305 yp-1 w50 vselect_browser gselect_browser, browse
+	GUI 2:Add, Checkbox, xs+90 vuse_custom_browser gsub_custom_browser_toggle Checked%use_custom_browser%, %A_Space%%A_Space%%gui2_gen_custombrowser%
 	
 	GUI 2:Add, Text, xs yp+35 w90 vtext_editor_text, Text editor
 	GUI 2:Add, Edit, xp+90 yp-3 vtext_editor r1 w300 readonly, %text_editor%
@@ -904,7 +905,7 @@ GUI2:	; the GUI with the preferences and settings
 	GUI 2:Add, Button, xp+305 yp-1 w50 vselect_file_browser gselect_file_browser, browse
 	
 	; this is a list of all the variables on this treeview selection, need it to easily hide/show
-	Program_Options = p1_1_general|autostart|traytip|GUI_titlebar|GUI_easymove|check_for_updates_on_startup|p1_1_progs|browser_text|browser|select_browser|text_editor_text|text_editor|select_text_editor|graphics_editor_text|graphics_editor|select_graphics_editor|file_browser_text|file_browser|select_file_browser|graphics_editor_text2|graphics_editor_ext|text_editor_text2|text_editor_ext	
+	Program_Options = p1_1_general|autostart|traytip|GUI_titlebar|GUI_easymove|check_for_updates_on_startup|p1_1_progs|browser_text|browser|select_browser|use_custom_browser|text_editor_text|text_editor|select_text_editor|graphics_editor_text|graphics_editor|select_graphics_editor|file_browser_text|file_browser|select_file_browser|graphics_editor_text2|graphics_editor_ext|text_editor_text2|text_editor_ext	
 	
 	; "Settings"
 	GUI, 2:Add, GroupBox, x%GroupBoxX% y%pref_treey% vp1c1_1 w480 h160 section hidden, Settings
@@ -1416,7 +1417,7 @@ sub_autostart_toggle:
 		GoSub sub_autostart_off
 	Else
 		GoSub sub_autostart_on
-	IniWrite, %autostart%, %ini_file%, general, autostart
+	IniWrite, %autostart%, %ini_file%, General, autostart
 return
 sub_autostart_on:
 	; check if a lnk already exists
@@ -1565,6 +1566,10 @@ set_list_ignores:
 		GoSub update_hitlist
 	IniWrite, % %A_GUIControl%, %ini_file%, GUI, % A_GUIcontrol
 	f_dbgoutput(gen,dbg,A_LineNumber,2,"gGUI2_set " A_GUIcontrol " = " %A_GUIcontrol%)
+return
+sub_custom_browser_toggle:
+	use_custom_browser := !use_custom_browser
+	IniWrite, %use_custom_browser%, %ini_file%, GUI, use_custom_browser
 return
 select_browser:
 	FileSelectFile, browser,3, %browser%, %GUI_Name% : Select file
@@ -2389,7 +2394,28 @@ update_hitlist:	; in a separate subroutine so we can call it when a filter is en
 		}
 		if OutFileName <>		; prevents empty lines
 		{
-			; first filter: if the user doesn't want folders to show up in his result
+			; if 1, only show hits in the restricted folder (start menu/desktop/quick launch folders)
+			if restricted_mode = 1
+			{
+				if OutDir contains %list_restricted% ; the path is in the restricted list (start menu)
+				{
+					if use_score = 1
+						score += score_restricted
+				}
+				else
+				{
+					missrestricted += 1
+					f_dbgoutput(gen,dbg,A_LineNumber,4,"update_hitlist: restricted mode is on, a string was found outside the restricted folders: " list_restricted )
+					continue
+				}
+			}
+			else if OutDir contains %list_restricted% ; restricted mode is off and the path is in the restricted list (start menu)
+			{
+				if use_score = 1
+					score += score_restricted
+			}
+
+			; if 1, do not show folders in the results
 			if filter_folders = 1
 			{
 				if OutExtension =
@@ -2402,7 +2428,7 @@ update_hitlist:	; in a separate subroutine so we can call it when a filter is en
 					}
 				}
 			}
-			; second filter: if the user only wants certain extensions (in %list_extensions%) to show up in his result
+			; if 1, only show certain extensions (in %list_extensions%) in the results
 			if filter_extensions = 1
 			{
 				if OutExtension not in %list_extensions%
@@ -2424,7 +2450,7 @@ update_hitlist:	; in a separate subroutine so we can call it when a filter is en
 					}
 				}
 			}
-			; third filter: any line with an ignored string in it needs to be skipped
+			; if 1, do not show any line with an ignored string in it
 			if filter_ignores = 1
 			{
 				if A_LoopField contains %list_ignores% ; whenever Var contains one of the list items as a substring
@@ -2438,17 +2464,6 @@ update_hitlist:	; in a separate subroutine so we can call it when a filter is en
 			{
 				if A_LoopField contains %list_ignores% ; whenever Var contains one of the list items as a substring
 					OutFileName .= " (ignored)"
-			}
-			if OutDir contains %list_restricted% ; contains %command_search%
-			{
-				if use_score = 1
-					score += score_restricted
-				if restricted_mode = 1
-				{
-					missrestricted += 1
-					f_dbgoutput(gen,dbg,A_LineNumber,4,"update_hitlist: restricted mode is on, a string was found outside the restricted folders: " list_restricted )
-					continue
-				}
 			}
 			hitcounter += 1	; here for the filtered results, this subroutine only gets here if there is no filter applicable
 			GoSub select_hitlist	; select the GUI and listview we want to fill
@@ -2672,7 +2687,15 @@ command_run:
 		engine_search := SubStr(command_search,firstspace + 1)
 		SB_SetText("Search " . engine_desc . " for: " . engine_search)
 		StringReplace, engine_search, engine_search, %A_Space%, `%20, ALL
-		run, % engine_URL . engine_search
+		if use_custom_browser = 1
+		{
+			ifexist %browser%
+				run, % browser . " " . engine_URL . engine_search
+			else
+				run, % engine_URL . engine_search
+		}
+		else
+			run, % engine_URL . engine_search
 		GoSub sub_clear
 		f_dbgtime(gen,dbg,A_LineNumber,"timer_execute_search","stop",2)
 		return
@@ -2949,13 +2972,13 @@ first_time_ok:
 	first_time_setup = 0
 	gosub sub_reload
 return
-GUICLOSE:
-GUIESCAPE:
+GUICLOSE: ;+
+GUIESCAPE: ;+
 	GoSub GUI_save_pos	; saves the position and dimensions of the GUI
 	GoSub GUI_hide
 	SetTimer, timer_autohide, off	; GUI has closed, so the autohide timer is no longer needed
-return
-ExitSub:
+return ;- ;-
+ExitSub: ;+
 	GoSub GUI_save_pos	; saves the position and dimensions of the GUI
 	FormatTime, TimeString,, yyyy-MM-dd HH:mm:ss
 	f_dbgoutput(gen,dbg,A_LineNumber,0,"Closing " app_name " v" app_version " on " TimeString " " A_ExitReason )
@@ -2965,4 +2988,4 @@ ExitSub:
 			Process, Close, %everythingPID%
 	}
 	Process, Close, %PluginLoaderPID%
-	exitapp
+	exitapp ;-

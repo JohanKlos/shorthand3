@@ -21,8 +21,8 @@ it not to be loaded anymore (plugins\disabled)
 		outputdebug %app_name% %app_ver%: Required parameter missing (disabled plugin folder eg: c:\shorthand\plugin\disabled).
 		exitapp
 	}
-	outputdebug %app_name% %app_ver%: testing %plugin%
 	SplitPath, plugin, plugin_name
+	outputdebug %app_name% %app_ver%: testing %plugin_name% (%plugin%)
 	; check if the plugin has the required lines: 
 	fileread, plugin_contents, %plugin%
 	if ( plugin_contents not contains "#ErrorStdOut" ) or ( plugin_contents not contains "#NoTrayIcon" )
@@ -33,7 +33,8 @@ it not to be loaded anymore (plugins\disabled)
 	else
 	{
 		; first, start a timer that looks for OutputVarPID, and closing it after a second
-		settimer, check, 1000
+		OutputVarPID :=
+		settimer, check
 		; this won't work when there's settimers involved, so we need to look in the auto-run section of the script and disable any settimers there
 		fileread, plugin_contents, %plugin%
 		Stringreplace, plugin_contents, plugin_contents, settimer, `;settimer,,ALL	; disable all settimers
@@ -43,32 +44,34 @@ it not to be loaded anymore (plugins\disabled)
 		plugin_contents :=
 		OutputVarPID :=
 		RunWait "%A_Temp%\testplugin.ahk", %A_ScriptDir%,,OutputVarPID
-		; because we use RunWait, if we get to the next line within a second, the plugin is faulty
+		; because we use RunWait, if we get to the next line, the plugin is considered faulty, this is why the plugin needs the #persistent line
+		settimer, check, off
 		gosub failed
 	}
 return
 failed:
-	outputdebug %app_name% %app_ver%: %plugin% is faulty `n move to %disabled%
+	outputdebug %app_name% %app_ver%: %plugin_name% is faulty: move to %disabled% (error 2)`n(%plugin%)
 	ifExist %disabled%
 		FileMove, %plugin%, %disabled%\%plugin_name%
 exitapp
 
 check:
-	if OutputVarPID =
-		return
-	Process, Exist, %OutputVarPID%
-	if ErrorLevel = 0	; just a extra test if the plugin "hangs"
+	if OutputVarPID !=
 	{
-		outputdebug %app_name% %app_ver%: %plugin% is faulty `n move to %disabled%
-		ifExist %disabled%
-			FileMove, %plugin%, %disabled%\%plugin_name%
-		exitapp
-	}
-	else
-	{
-		outputdebug %app_name% %app_ver%: %plugin% is good, no action
-		Process, Close, %OutputVarPID%
-		OutputVarPID :=
-		exitapp
+		Process, Exist, %OutputVarPID%
+		if ErrorLevel = 0	; just a extra test if the plugin "hangs"
+		{
+			outputdebug %app_name% %app_ver%: %plugin_name% is faulty: move to %disabled% (error 1)`n(%plugin%)
+			ifExist %disabled%
+				FileMove, %plugin%, %disabled%\%plugin_name%
+			exitapp
+		}
+		else
+		{
+			outputdebug %app_name% %app_ver%: %plugin% is good, no action
+			Process, Close, %OutputVarPID%
+			OutputVarPID :=
+			exitapp
+		}
 	}
 return

@@ -14,9 +14,11 @@ Plugins()
 	; so, 1) check the names of the plugins and timestamps of the plugins
 	Loop, %plugin_folder%\*.ahk
 	{
+		if A_LoopFileName =
+			break
 		FileGetTime, LastModified, %A_LoopFileLongPath%
 		plugins_active_new .= A_LoopFileName "|" LastModified "," 
-		plugins_LoadList .= SubStr(A_LoopFileName, 1, -1 - StrLen(A_LoopFileExt)) "|"
+		plugins_LoadList .= ( A_Index = 1 ? "" : "|" ) . SubStr(A_LoopFileName, 1, -1 - StrLen(A_LoopFileExt))
 		plugins_IncList .= "#include *i " A_LoopFileLongPath "`n"
 	}
 	; now, collect the previously checked variable from the ini file
@@ -56,9 +58,11 @@ Plugins()
 		; and then fill them again
 		Loop, %plugin_folder%\*.ahk
 		{
+			if A_LoopFileName =
+				break
 			FileGetTime, LastModified, %A_LoopFileLongPath%
-			plugins_active_new .= A_LoopFileName "|" LastModified "," 
-			plugins_LoadList .= SubStr(A_LoopFileName, 1, -1 - StrLen(A_LoopFileExt)) "|"
+			plugins_active_new .= A_LoopFileName "|" LastModified ","
+			plugins_LoadList .= ( A_Index = 1 ? "" : "|" ) . SubStr(A_LoopFileName, 1, -1 - StrLen(A_LoopFileExt))
 			plugins_IncList .= "#include *i " A_LoopFileLongPath "`n"
 		}
 		IniWrite, %plugins_active_new%, %ini_file%, Plugins, List

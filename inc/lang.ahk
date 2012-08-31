@@ -39,6 +39,7 @@
 	info_GUI_easymove = This will allow to move the main search window by left clicking and dragging.
 	info_logging = Meant for debugging purposes. This changes the messages that show up in a debugger (like Sysinternals' dbgview.exe).
 	info_browser = This program will be used to open certain files opened through %app_name%.
+	info_use_custom_browser = If checked, %app_name% will open any URL and ? commands with the browser above, otherwise the systems' browser will be used. 
 	info_text_editor = This program will be used to open certain files opened through %app_name%.
 	info_graphics_editor = This program will be used to open certain files opened through %app_name%.
 	info_file_browser = This program will be used to open certain files opened through %app_name%.	
@@ -119,5 +120,6 @@
 	gui2_gen_traytip = Show &TrayTip when performing an action
 	gui2_gen_titlebar = Show Title&bar on the search window
 	gui2_gen_easymove = EasyMove the search window by left clicking on the background
+	gui2_gen_custombrowser = Use browser specified above for ? searches
 	
 ; }

@@ -3,6 +3,7 @@
 ; Version = 0.01
 ; Description = Shows a Month-calendar and today's date, nothing else yet.
 ; Author = Maestr0
+#persistent ; this line needs to be in every plugin
 #NoTrayIcon ; this line needs to be in every plugin
 #ErrorStdOut ; this line needs to be in every plugin
 

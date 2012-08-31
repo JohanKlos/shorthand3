@@ -2,6 +2,8 @@
 ; Category = Hotkey 
 ; Version = 0.01
 ; Description = Adds a hotkey Ctrl-1 to Notepad++ to execute the opened file
+; Author = Maestr0
+#persistent ; this line needs to be in every plugin
 #ErrorStdOut ; this line needs to be in every plugin
 #NoTrayIcon ; this line needs to be in every plugin
 

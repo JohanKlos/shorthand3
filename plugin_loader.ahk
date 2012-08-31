@@ -7,7 +7,7 @@ Berbans' method overcomes this by first doing a gosub label before including the
 */
 #Persistent
 #SingleInstance Force
-#ErrorStdOut				; to prevent errors annoying the users
+#ErrorStdOut				; to prevent errors annoying the user
 #NoTrayIcon
 #NoEnv  					; Recommended for performance and compatibility with future AutoHotkey releases.
 
@@ -16,13 +16,13 @@ if ini_file =
 	return
 
 IniRead, Plugins, %ini_file%, Plugins, LoadList,	; collect the previously checked variable from the ini file
-
 Loop, Parse, Plugins, |
 {
-	if A_LoopField =
+	plugin = %A_LoopField%
+	if plugin =
 		break
-	Gosub %A_LoopField%
+	Gosub %plugin%
 }
-#include *i %A_ScriptDir%\temp\plugin_list.tmp
 FileDelete %A_ScriptDir%\temp\plugin_list.tmp
-return
+#include *i %A_ScriptDir%\temp\plugin_list.tmp
+exitapp
