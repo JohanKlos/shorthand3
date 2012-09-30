@@ -827,7 +827,7 @@ GUI2:	; the GUI with the preferences and settings
 	f_dbgtime(gen,dbg,A_LineNumber,"GUI2","start",1)
 	GUI 2:destroy
 	GUI 2:Default	 ; Default needed for the treeview
-	GUI 2:+owner1  ; Will make it so preferences is always on top of the main GUI. This line has to be before any "GUI, 2:Add" is done, and after GUI 1: has been created.
+	GUI 2:+owner  ; Will make it so preferences is always on top of the main GUI. This line has to be before any "GUI, 2:Add" is done, and after GUI 1: has been created.
 	GUI 2:-alwaysontop
 	
 	ifwinexist, %GUI2_name%	; if the GUI already exists, just show it and do nothing else
@@ -935,9 +935,9 @@ GUI2:	; the GUI with the preferences and settings
 
 	GUI, 2:Add, GroupBox, x%GroupBoxX% ys+210 vp1c1c1_2 w480 h200 section hidden, Scoring
 	GUI, 2:Add, Checkbox, xs+20 yp+20 vuse_score gGUI2_set Checked%use_score% hidden, %A_Space%%A_Space%Use scoring for files and folders (higher scores will be higher in the results list)
-	GUI, 2:Add, Edit, xs+20 yp+20 vscore_history w40 number right hidden, %score_history%
+	GUI, 2:Add, Edit, xs+20 yp+20 vscore_history w40 gGUI2_set number right hidden, %score_history%
 	GUI, 2:Add, Text, xp+50 yp+3 vscore_history_text w250 hidden, History
-	GUI, 2:Add, Edit, xs+20 yp+20 vscore_custom w40 number right hidden, %score_custom%
+	GUI, 2:Add, Edit, xs+20 yp+20 vscore_custom w40 gGUI2_set number right hidden, %score_custom%
 	GUI, 2:Add, Text, xp+50 yp+3 vscore_custom_text w250 hidden, Custom Files
 	
 	Results = p1c1c1_1|filter_folders|filter_systemfiles|filter_hiddenfiles|filter_extensions|list_extensions|filter_ignores|list_ignores|p1c1c1_2|use_score|score_history|score_history_text|score_custom|score_custom_text 
@@ -1866,18 +1866,22 @@ GUIContextMenu:
 		Menu, Context, Add, %t_cmd_del%, GUI_Add_delete
 		Menu, Context, Icon, %t_cmd_del%, Shell32.dll, 32
 
+		Menu, Context, Add,
 		if command_name contains (custom)
 			Menu, Context, Add, %t_cmd_delfromcustom%, GUI_ADD_deletefromcustom
 		if command_name contains (history)
 			Menu, Context, Add, %t_cmd_delfromhistory%, GUI_ADD_deletefromhistory	
 		if command_name contains (ignored)
 			Menu, Context, Add, %t_cmd_delfromignore%, GUI_ADD_deletefromignorelist
-			
+		else
+		{
+			Menu, Context, Add, %t_cmd_addignore%, GUI_ADD_ignore
+			Menu, Context, Add, %t_cmd_addignore_file%, GUI_ADD_ignore_file
+		}
+		
 		Menu, Context, Add,
 		;Menu, Context, Add, Add Hotkey for %command%, GUI_Add_hotkey
 		Menu, Context, Add, %t_copypath%, GUI_Add_copypath
-		Menu, Context, Add, %t_cmd_addignore%, GUI_ADD_ignore
-		Menu, Context, Add,
 		Menu, Context, Add, %t_cmd_properties%, GUI_Add_properties
 		Menu, Context, Add, %t_cmd_browse%, GUI_Add_browse
 		Menu, Context, Icon, %t_cmd_browse%, Shell32.dll, 4
@@ -1906,7 +1910,7 @@ GUIContextMenu:
 	Menu, Context, Icon, %t_preferences%, %icon_settings%
 	; Menu, Context, Icon, %t_preferences%, Shell32.dll, 177 ; 36
 	Menu, Context, Add,
-	Menu, Context, Add, empty, ddel
+	; Menu, Context, Add, empty, ddel
 	Menu, Context, Add, %t_reload%, sub_reload
 	Menu, Context, Add, %t_exit%, ExitSub
 	Menu, Context, Show, %A_GUIX%, %A_GUIY%
@@ -2051,12 +2055,19 @@ return
 GUI_ADD_ignore:
 	list_ignores .= "," . command_path . "\" . command_name
 	IniWrite, %list_ignores%, %ini_file%, GUI, list_ignores
+	gosub update_hitlist
+return
+GUI_ADD_ignore_file:
+	list_ignores .= "," . command_name
+	IniWrite, %list_ignores%, %ini_file%, GUI, list_ignores
+	gosub update_hitlist
 return
 GUI_ADD_deletefromignorelist:
 	StringReplace, command_name, command_name, %A_Space%(ignored),,
-	StringReplace, list_ignores, list_ignores, `,%command_path%\%command_name%,,ALL
+	StringReplace, list_ignores, list_ignores, `,%command_path%\%command_name%,,ALL ; to delete path and filename
+	StringReplace, list_ignores, list_ignores, `,%command_name%,,ALL	; to delete only the filename
 	IniWrite, %list_ignores%, %ini_file%, GUI, list_ignores
-	msgbox %command_path%\%command_name%`n%list_ignores%
+	gosub update_hitlist
 return
 GUI_Add_properties:
 	run, properties "%command%", %command_path%, UseErrorLevel
@@ -2381,7 +2392,7 @@ update_hitlist:	; in a separate subroutine so we can call it when a filter is en
 			run, %app_everything% -install_service
 			break
 		}
-		if(A_LoopField not contains command_search )
+		if ( A_LoopField not contains command_search )
 			continue
 		command_path := A_LoopField
 		SplitPath, command_path, OutFileName, OutDir, OutExtension, OutNameNoExt, OutDrive
@@ -2482,8 +2493,16 @@ update_hitlist:	; in a separate subroutine so we can call it when a filter is en
 					}
 				}
 			}
-			if not Instr(custom_list,command_path)		; to prevent doubles
-				LV_Add("", OutFileName, OutExtension, command_path, score)	; Adds the results to the hitlist
+			if not Instr(custom_list,command_path)		; to prevent doubles (in the custom list and the Everything results)
+			{
+				if use_history = 1
+				{
+					if not Instr(log_history,command_path)		; to prevent doubles (in the history and the Everything results)
+						LV_Add("", OutFileName, OutExtension, command_path, score)	; Adds the results to the hitlist
+				}
+				else
+					LV_Add("", OutFileName, OutExtension, command_path, score)	; Adds the results to the hitlist
+			}
 			score :=
 		}
 	}	

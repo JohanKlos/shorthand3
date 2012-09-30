@@ -5,12 +5,10 @@ TO DO
 	short term
 	-------------------------
 	fixed:
-	- when doing a large search and the user navigates away, it autohides but then pops back up and doesn't autohide
-	- try opening snipping tool.lnk, it'll error on line 368
-	added:
-	- open http / do ? actions with custom browser (in preferences)
+	- score changes in the preferences GUI now save correctly (required a change section in ini file)
 	
 	open:
+	- change plugins to get their configurations from the custom file(s)
 	- plugin: recycle bin emptier
 	- when the user scrolled to the right in the listview, the place is remembered until a reload... change it so it's cleared on "empty" ?
 	- plugin_tester: icon and GUI to test plugins? < change plugin_tester, it won't work with settimers

@@ -3,7 +3,7 @@
 #Warn UseUnsetLocal, off		; doesn't warn when an unset LOCAL variable is used 
 
 app_name			= Shorthand
-app_version		= 3.00.012
+app_version		= 3.00.013
 app_author			= Johan "Maestr0" Klos
 gen					:= Object()
 gen.app_name		:= app_name

@@ -68,7 +68,8 @@
 	t_cmd_delfromignore = Delete from Ignore List
 
 	t_copypath = CopyPath
-	t_cmd_addignore = Add to ignore list
+	t_cmd_addignore = Add path/filename to ignore list
+	t_cmd_addignore_file = Add filename to ignore list
 	t_cmd_properties = Properties
 	t_cmd_browse = Browse folder
 

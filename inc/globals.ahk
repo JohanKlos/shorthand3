@@ -113,9 +113,9 @@ Read_ini:
 
 	IniRead, use_history, %ini_file%, GUI, use_history, 1					; 1 : keep track of what is opened/run with shorthand, allows scoring and combobox in GUI
 	IniRead, use_score, %ini_file%, GUI, use_score, 1						; 1 : use scoring to change the sorting of the hitlist
-	IniRead, score_restricted, %ini_file%, Score, score_restricted, 50		; "run" files in a start menu or desktop 
-	IniRead, score_history, %ini_file%, Score, score_history, 100			; files in log_history get (by default) 100 score points (hitlist shows in descending order)
-	IniRead, score_custom, %ini_file%, Score, score_custom, 150				; "run" files in a custom_file
+	IniRead, score_restricted, %ini_file%, GUI, score_restricted, 50		; "run" files in a start menu or desktop 
+	IniRead, score_history, %ini_file%, GUI, score_history, 100			; files in log_history get (by default) 100 score points (hitlist shows in descending order)
+	IniRead, score_custom, %ini_file%, GUI, score_custom, 150				; "run" files in a custom_file
 
 	IniRead, show_lnk, %ini_file%, GUI, show_lnk, 1							; when 0, the results will show the path to the actual file, instead of the .lnk filename
 
