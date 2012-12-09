@@ -4,10 +4,10 @@ SetBatchLines -1 				; Performance setting: maximum speed for loops
 ListLines Off					; Performance setting
 ; #Warn
 #SingleInstance Force
-#MaxThreadsPerHotkey 1		; enable correction on accidental press of several hotkeys (only last pressed hotkey will fire)
-OnExit, ExitSub				; when script exits, go to subroutine ExitSub
-Process, Priority,, High 	; increase performance for Hotkeys, Clicks, or Sends while the CPU is under heavy load
-SetWorkingDir %A_ScriptDir%	; unconditionally use its own folder as its working directory
+#MaxThreadsPerHotkey 1			; enable correction on accidental press of several hotkeys (only last pressed hotkey will fire)
+OnExit, ExitSub					; when script exits, go to subroutine ExitSub
+Process, Priority,, High 		; increase performance for Hotkeys, Clicks, or Sends while the CPU is under heavy load
+SetWorkingDir %A_ScriptDir%		; unconditionally use its own folder as its working directory
 SetWinDelay,2					; for smooth resizing
 ; SendMode InputThenPlay 		; commented because it made the send not work all the time...
 DetectHiddenWindows ON
@@ -17,15 +17,16 @@ FormatTime, app_modtime, %app_modtime%, yyyy-MMMM-dd HH:mm:ss
 
 	#include %A_ScriptDir%\inc\debugging.ahk		; for debugging purposes
 	#include %A_ScriptDir%\inc\Autoexec.ahk		; the autoexecute section
-f_dbgtime(gen,dbg,A_LineNumber,"Bootup","start",0) ; sub_time shows in outputdebug how long a certain function/subroutine takes to run
-	#include %A_ScriptDir%\inc\PortableCheck.ahk	; checks where the userfiles should go (portable or user_app)
-	check_portable()	; this checks %A_ScriptDir%\portable.ini sets paths in the app_folder (=portable) or not (= not portable)
+
+f_dbgtime(gen,dbg,A_LineNumber,"Bootup","start",0) 	; sub_time shows in outputdebug how long a certain function/subroutine takes to run
+	#include %A_ScriptDir%\inc\PortableCheck.ahk		; checks where the userfiles should go (portable or user_app)
+	check_portable()									; this checks %A_ScriptDir%\portable.ini sets paths in the app_folder (=portable) or not (= not portable)
 	#include %A_ScriptDir%\inc\globals.ahk			; the global variables
-	#include %A_ScriptDir%\inc\lang.ahk			; language variables
+	#include %A_ScriptDir%\inc\lang.ahk				; language variables
 	#include %A_ScriptDir%\inc\history.ahk			; history functions for executed functions
-	#include %A_ScriptDir%\inc\plugin.ahk			; sorts plugin checking and loading
-	#include %A_ScriptDir%\inc\Calc.ahk			; takes care of the calculator function (enter "= " in the search window)
-	#include %A_ScriptDir%\inc\ShellRun.ahk		; to run programs non-elevated (because the script needs to run elevated, everything it runs will by default be elevated too)
+	#include %A_ScriptDir%\inc\plugin.ahk				; sorts plugin checking and loading
+	#include %A_ScriptDir%\inc\Calc.ahk				; takes care of the calculator function (enter "= " in the search window)
+	#include %A_ScriptDir%\inc\ShellRun.ahk			; to run programs non-elevated (because the script needs to run elevated, everything it runs will by default be elevated too)
 
 	Plugins()
 	read_ini()
@@ -363,8 +364,14 @@ sub_getextandrun:
 
 	if command_name_noext =
 	{
-		msgbox,, %app_name%, Error %A_LastError%: %error_2%`n`nFile not found.
-		f_dbgoutput(gen,dbg,A_LineNumber,2,"sub_getextandrun = " run_command " " arguments " in path " command_path)
+		firstchars := Substr(command,1,4)
+		if firstchars = http
+			run %command%, , UseErrorLevel
+		else
+		{
+			msgbox,, %msg_title%, Error %A_LastError%: %error_2%`n`n%msg_404%
+			f_dbgoutput(gen,dbg,A_LineNumber,2,"sub_getextandrun = " run_command " " arguments " in path " command_path)
+		}
 	}
 	else
 	{
@@ -449,12 +456,6 @@ menu:
 				Menu, Includes, Add, Open \inc\%A_LoopFileName%, menu_open
 		}
 		Menu, menu_files, Add, Includes, :Includes	; creates the subsubfolder "Includes"
-
-		Menu, menu_files, Add
-		Menu, Lists, Add, ListHotkeys, list_hotkeys
-		Menu, Lists, Add, KeyHistory, list_KeyHistory
-		Menu, Lists, Add, ListVars, list_vars
-		Menu, menu_files, Add, Lists, :lists	; creates the subsubfolder "Lists"
 	}
 	Menu, Tray, Add
 	Menu, Tray, Add, Preferences, GUI2
@@ -464,6 +465,15 @@ menu:
 	Menu, Tray, Add, Send feedback, feedback
 	Menu, Tray, Add, About..., about
 	Menu, Tray, Add
+	if A_IsCompiled <> 1
+	{
+		Menu, Lists, Add, ListHotkeys, list_hotkeys
+		Menu, Lists, Add, KeyHistory, list_KeyHistory
+		Menu, Lists, Add, ListVars, list_vars
+		Menu, Lists, Add
+		Menu, Lists, Standard
+		Menu, Tray, Add, Lists, :lists	; creates the subsubfolder "Lists"
+	}
 	Menu, Tray, Add, Reload, sub_reload
 	Menu, Tray, Add, Exit, ExitSub
 	gosub sub_copypath_check
@@ -558,7 +568,7 @@ checks:
 	{
 		ifnotexist %app_find%
 		{
-			msgbox, 4, %app_name% %app_version%, Essential file not found, click yes to download the necessary files (es.exe and everything.exe) to "%app_folder%\".
+			msgbox, 4, %msg_title%, %msg_filemissing%
 			ifmsgbox Yes
 			{
 				ifnotexist %app_folder%
@@ -1225,11 +1235,6 @@ lv_plugins_edit:
 	Run, "%text_editor%" "%plugin_path%%plugin_name%"
 return
 sub_getplugindetails:
-; Name = Window Closer
-; Category = Enhancement
-; Version = 0.01
-; Description = Checks for and closes specified windows, based on wintitle and ahk_class
-; Author = Maestr0
 	name = N/A
 	cat = N/A
 	ver = N/A
@@ -1317,14 +1322,14 @@ lv_custom_file_remove:
 	gosub lv_custom_selected
 	if FileName = path	; which means no row is selected, but the header instead
 	{
-		msgbox,, %App_name%, First, you'll need to select a custom file in the list.
+		msgbox,, %msg_title%, %msg_customfile%
 		return
 	}
 	/*
 	; ask the user if the file needs to be deleted as well, but only if the file exists in the first place
 	ifexist %command%
 	{
-		MsgBox, 259, %App_name%, Do you want to delete the old custom file?`n(%command%)	; 259 means it'll be a yes/no/cancel msgbox and the no button is selected by default
+		MsgBox, 259, %msg_title%, Do you want to delete the old custom file?`n(%command%)	; 259 means it'll be a yes/no/cancel msgbox and the no button is selected by default
 		IfMsgBox Yes
 			FileRecycle, %command%
 		IfMsgBox cancel
@@ -1430,7 +1435,7 @@ sub_autostart_on:
 		{
 			; the path is NOT correct:
 			; ask user if he wants to replace the lnk with a newer version
-			MsgBox, 4, %app_name% %app_version%,, A different startup lnk is detected (to %OutTarget%).`n`n Do you want to replace the link?
+			MsgBox, 4, %msg_title%, %msg_autostart%`n(%OutTarget%)
 			IfMsgBox Yes
 			{
 				; if yes, delete and create
@@ -1456,13 +1461,13 @@ sub_autostart_on:
 		; lnk exists, get outTarget
 		FileGetShortcut, %A_Startup%\%app_name%.lnk, OutTarget
 		;if OutTarget = %A_ScriptFullPath%
-		;	msgbox,, %app_name% %app_version%, Successfully Added %app_name% to the startup routine (%A_Startup%\%app_name%.lnk)
+		;	msgbox,, %msg_title%, Successfully Added %app_name% to the startup routine (%A_Startup%\%app_name%.lnk)
 		autostart = 1
 	}
 	Else
 	{
 		; lnk does not exist, notify user
-		msgbox,, %app_name% %app_version%, Failed to Add %app_name% to the startup routine (%A_Startup%\%app_name%.lnk)
+		msgbox,, %msg_title%, %msg_autostartfailed%
 	}
 Return
 sub_autostart_off:
@@ -1471,13 +1476,13 @@ sub_autostart_off:
 	IfNotExist %A_Startup%\%app_name%.lnk
 	{
 		if automatic <> 1
-			msgbox,, %app_name% %app_version%, Successfully removed %app_name% from the startup routine (%A_Startup%\%app_name%.lnk)
+			msgbox,, %msg_title%, Successfully removed %app_name% from the startup routine (%A_Startup%\%app_name%.lnk)
 		autostart = 0
 	}
 	Else
 	{		
 		if automatic <> 1
-			msgbox,, %app_name% %app_version%, Failed to Remove %app_name% from the startup routine (%A_Startup%\%app_name%.lnk)
+			msgbox,, %msg_title%, Failed to Remove %app_name% from the startup routine (%A_Startup%\%app_name%.lnk)
 	}
 Return
 
@@ -1992,7 +1997,7 @@ GUI_Add_deletebtn:
 	}
 	ifnotexist %command%
 		return
-	MsgBox, 4,, Are you sure you want to the following file?`n%command%
+	MsgBox, 4,, %msg_delete%`n%command%
 	IfMsgBox No
 		Return	
 GUI_ADD_delete:
@@ -2301,7 +2306,7 @@ timer_execute_search:
 			ifexist C:\WINDOWS\system32\findstr.exe
 				FileCopy C:\WINDOWS\system32\findstr.exe, %app_findstr%
 			else
-				msgbox,, %app_name% %app_version%, %error_findstr_not_found%
+				msgbox,, %msg_title%, %error_findstr_not_found%
 		}
 		; check if the temporary (filtered) output file exists, if so, delete it
 		ifexist %result_filename2%
@@ -2589,7 +2594,7 @@ select_hitlist:
 return
 sub_command_guess_custom:
 	f_dbgtime(gen,dbg,A_LineNumber,"sub_command_guess_custom","start",2)
-	custom_list :=	; do it here and not after, because we'll need the list to prevent doubles
+	custom_list :=		; empty custom_list here and not after, because we'll need the list to prevent doubles
 	Loop, parse, total_custom, `n
 	{
 		if ( SubStr(A_LoopField,1,1) = "`;" )		; ignore commented lines in the custom files
@@ -2779,24 +2784,7 @@ timer_autohide:
 return
 sub_errorlevel:
 	if A_LastError <> 0
-	{
-		if A_LastError = 2
-			msgbox,, %app_name%, Error %A_LastError%: %error_2%`n`n"%command%" in "%command_path%"
-		if A_LastError = 3
-			msgbox,, %app_name%, Error %A_LastError%: %error_3%`n`n"%command%" in "%command_path%"
-		if A_LastError = 4
-			msgbox,, %app_name%, Error %A_LastError%: %error_4%`n`n"%command%" in "%command_path%"
-		if A_LastError = 5
-			msgbox,, %app_name%, Error %A_LastError%: %error_5%`n`n"%command%" in "%command_path%"
-		if A_LastError = 15
-			msgbox,, %app_name%, Error %A_LastError%: %error_15%`n`n"%command%" in "%command_path%"
-		if A_LastError = 21
-			msgbox,, %app_name%, Error %A_LastError%: %error_21%`n`n"%command%" in "%command_path%"
-		if A_LastError = 25
-			msgbox,, %app_name%, Error %A_LastError%: %error_25%`n`n"%command%" in "%command_path%"
-		if A_LastError = 1155
-			msgbox,, %app_name%, Error %A_LastError%: %error_1155%`n`n"%command%" in "%command_path%"
-	}
+		msgbox,, %msg_title%, % "Error " . A_LastError . " : " . error_%A_LastError% . "`n`n" . command . " in " . command_path
 return
 check_update_manual:
 /*
@@ -2834,7 +2822,7 @@ check_update_automatic:
 	if new_ver > %app_version%
 	{
 		f_dbgoutput(gen,dbg,A_LineNumber,1,"check_update_automatic = new version found: " new_ver)
-		MsgBox, 4, %app_name% %app_version%: updating %name%, A newer version is available: v%new_ver%.`nWould you like to download and install this new version?
+		MsgBox, 4, %msg_title%, %msg_newver% (v%new_ver%)
 		IfMsgBox Yes
 			run, "%app_updater%" "%A_ScriptFullPath%" %app_version% %update_url% 1 "%log_file%" %script_PID%
 	}
@@ -2847,7 +2835,7 @@ feedback:
 	Run, mailto:maestr0@gmx.net?subject=%app_name% %app_version% feedback
 return
 about:
-	msgbox,, %app_name% %app_version%, %text_about%
+	msgbox,, %msg_title%, %text_about%
 return
 first_time_gui:
 	GUI, 3:Add, Text, section, %gui3_preferences%

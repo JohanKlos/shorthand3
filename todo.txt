@@ -4,10 +4,14 @@ TO DO
 -----------------------------
 	short term
 	-------------------------
-	fixed:
-	- score changes in the preferences GUI now save correctly (required a change section in ini file)
+	added:
+	- google image search (?gi)
+	- added lists and standard to tray menu for uncompiled scripts
 	
 	open:
+	- error line 135 with run missing a parameter :?
+	- add keywords for searches: "::mp3 rhapsody" would list all mp3/wma/wav/au3/ogg/etc files with rhapsody in them, nothing else and irregardless of filter list, if a keyword is in a list, that list will be used!
+	- keywords: :mp3, :doc, :xls, :jpg etc, but only for that extension, irregardless of filter lists 
 	- change plugins to get their configurations from the custom file(s)
 	- plugin: recycle bin emptier
 	- when the user scrolled to the right in the listview, the place is remembered until a reload... change it so it's cleared on "empty" ?

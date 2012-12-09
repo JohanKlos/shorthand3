@@ -56,6 +56,15 @@
 
 	text_about = %app_name% is a program to make finding and running files easier.`n`nIt is similar to programs like FindAndRunRobot and Launchy.`n`n%App_name% uses Everything.exe / ES.exe (http://www.voidtools.com) for file searching and Findstr.exe (http://technet.microsoft.com/en-us/library/bb490907.aspx) for searching in files.`n`nYou can also bind hotkeys to certain files, folders and actions.`n`nAHK version: %A_AhkVersion%`n`n%App_name% build: %app_modtime%
 
+	msg_title = %app_name% %app_version%
+	msg_autostart = A different startup lnk is detected.`n`n Do you want to replace the link?
+	msg_autostartfailed = Failed to add %app_name% to the startup routine (%A_Startup%\%app_name%.lnk)
+	msg_delete = Are you sure you want to delete the following file?
+	msg_newver = A newer version is available.`nWould you like to download and install this new version?
+	msg_404 = File not found.
+	msg_filemissing = Essential file not found, click yes to download the necessary files (es.exe and everything.exe) to "%app_folder%\".
+	msg_customfile = Please select a custom file from the list first.
+	
 	t_cmd_open = Open
 	t_cmd_openwith = Open with...
 	t_cmd_openwitharg = Open with arguments
